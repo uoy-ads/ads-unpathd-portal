@@ -102,6 +102,7 @@
 <script setup lang="ts">
 import { $computed } from 'vue/macros';
 import { generalModule, searchModule, aggregationModule, resourceModule } from "@/store/modules";
+import { themeAggregationTypesToSkip } from '@/theme/settings';
 
 // base & utils
 import utils from '@/utils/utils';
@@ -158,10 +159,12 @@ const getAggregations = (data: any): Array<any> => {
         if (!agg.prop || d.some((p: any) => p[agg.prop])) {
           let str = getMarked(joinMatching(d, agg));
           if (agg.always || str.includes('<span class="bg-')) {
-            return {
-              id: agg.id,
-              data: str
-            };
+              if(!themeAggregationTypesToSkip.includes(agg.id)) {
+                return {
+                  id: agg.id,
+                  data: str
+                };
+              }
           }
         }
       }

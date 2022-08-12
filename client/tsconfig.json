@@ -6,7 +6,7 @@
     "noImplicitReturns": true,
     "module": "esnext",
     "moduleResolution": "node",
-    "target": "es5",
+    "target": "ES2017",
     "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {

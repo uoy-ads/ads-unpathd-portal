@@ -10,15 +10,14 @@
         style="margin-bottom: -28px">
         <img
           :src="`${ assets }/logo.png`"
-          class="backface-hidden"
-          alt="Ariadne logo"
+          alt="Unpath'd Waters"
         />
         <p class="text-red text-2x" style="font-family: 'PT Sans'; white-space: nowrap; margin-top: -7px">
           ARIADNE PORTAL
         </p>
       </b-link>
 
-      <div class="w-1/2 border-b-3 border-yellow ml-5x absolute bottom-0"></div>
+      <div class="w-1/2 ml-5x absolute bottom-0"></div>
 
       <!--  menu -->
       <ul class="flex flex-1 h-full justify-end ml-2x xl:mr-base">

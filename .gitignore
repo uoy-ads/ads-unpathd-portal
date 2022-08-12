@@ -11,3 +11,4 @@ server/html/static
 server/html/*
 !server/html/api/
 !server/html/.htaccess
+!server/theme/settings.json

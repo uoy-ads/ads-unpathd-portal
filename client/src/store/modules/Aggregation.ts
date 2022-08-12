@@ -4,6 +4,7 @@ import axios from 'axios';
 import utils from '@/utils/utils';
 import { SearchModule } from './Search';
 import { titles, descriptions, resultTitles, types } from './Aggregation/static';
+import { themeAggregationTypesToSkip } from '@/theme/settings';
 
 export interface iKeyVal {
   key: string,
@@ -125,7 +126,7 @@ export class AggregationModule extends VuexModule {
   }
 
   get getSorted() {
-    const startOrder = [
+    let startOrder = [
       'ariadneSubject',
       'derivedSubject',
       'publisher',
@@ -133,12 +134,17 @@ export class AggregationModule extends VuexModule {
       'nativeSubject'
     ];
 
+    startOrder = startOrder.filter( function( el ) {
+      return !themeAggregationTypesToSkip.includes( el );
+    } );    
+
     const result = this.searchModule.getAggsResult?.aggs;
 
     let sorted: any = {};
 
     if (this.hasAggs) {
-      const typesToSkip = ['fields', 'geogrid', 'bbox', 'range'];
+      let typesToSkip = ['fields', 'geogrid', 'bbox', 'range'];
+      typesToSkip = typesToSkip.concat(themeAggregationTypesToSkip);
 
       startOrder.forEach((key: string) => sorted[key] = result[key]);
 

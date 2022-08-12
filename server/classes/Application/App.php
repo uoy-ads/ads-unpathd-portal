@@ -26,6 +26,7 @@ class App {
     $this->uriParts = explode('/', $parts);
 
     $this->settings = $settings;
+    $this->applyThemeSettings();
 
     $this->logger = new Logger('main');
     if ($this->settings->environment->logLevel !== 'NONE') {
@@ -47,6 +48,17 @@ class App {
       $this->q->setClient($clientHost);
     }
 
+  }
+  
+  private function applyThemeSettings() {
+    $path = '../../theme/settings.json';
+    if(file_exists($path)) {
+      $theme_settings = json_decode(file_get_contents($path));
+      if($theme_settings) {
+        $this->settings = (object) array_merge(
+          (array) $this->settings, (array) $theme_settings);
+      }
+    }
   }
 
   // returns settings

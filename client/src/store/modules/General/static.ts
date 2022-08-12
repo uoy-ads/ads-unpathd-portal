@@ -15,15 +15,6 @@ export const frontPageLinks = [
 
 export const mainNavigation = [
   {
-    path: '/search',
-    name: 'Catalogue',
-    icon: 'search',
-    color: 'yellow',
-    border: 'border-yellow',
-    bg: 'bg-yellow-20',
-    hover: 'hover:bg-yellow-20',
-  },
-  {
     path: '/browse',
     name: 'Browse',
     icon: 'globe-americas',
