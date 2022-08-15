@@ -9,12 +9,13 @@
         class="ml-base flex transition-opacity duration-300 hover:opacity-80"
         style="margin-bottom: -28px">
         <img
-          :src="`${ assets }/logo.png`"
+          :src="`${ assets }/unpathdwaters-landscape-logo.png`"
           alt="Unpath'd Waters"
+          style="width: 147px; margin-top: -27px;"
         />
-        <p class="text-red text-2x" style="font-family: 'PT Sans'; white-space: nowrap; margin-top: -7px">
+        <!--<p class="text-red text-2x" style="font-family: 'PT Sans'; white-space: nowrap; margin-top: -7px">
           ARIADNE PORTAL
-        </p>
+        </p>-->
       </b-link>
 
       <div class="w-1/2 ml-5x absolute bottom-0"></div>

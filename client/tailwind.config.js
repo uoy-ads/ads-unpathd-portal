@@ -82,10 +82,10 @@ module.exports = {
 
     colors: getColorsWithOpacity({
       // primary
-      yellow: '#D5A03A',
-      red:    '#BB3921',
-      green:  '#75A99D',
-      blue:   '#135C77',
+      yellow: '#D1CBBB',
+      red:    '#923A34',
+      green:  '#63705B',
+      blue:   '#1D628C',
 
       // general
       darkGray:    '#333',
@@ -93,7 +93,7 @@ module.exports = {
       midGray:     '#777',
       gray:        '#ccc',
       lightGray:   '#efefef',
-      black:       '#000',
+      black:       '#06141C',
       white:       '#fff',
       lightYellow: '#ffffcc',
     }),
