@@ -72,7 +72,8 @@ const assets: string = $computed(() => generalModule.getAssetsDir);
 
 const isActive = (itemPath: string): boolean => {
   return path.includes(itemPath) ||
-    (itemPath.includes('search') && path.includes('resource'));
+    (itemPath.includes('search') && path.includes('resource')) ||
+    (itemPath.includes('search') && path == '/');
 }
 
 const updateMenuPath = (): void => {
