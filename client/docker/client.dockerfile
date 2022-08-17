@@ -16,7 +16,9 @@ FROM node:15-alpine AS ariadne-build
 LABEL maintainer="SND <team-it@snd.gu.se>"
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+#RUN npm install
+# install from package-lock.json
+RUN npm ci
 COPY . .
 RUN npm run build
 

@@ -17,7 +17,7 @@
       >
         <!-- icon -->
         <div class="absolute left-md top-base flex flex-col">
-          <help-tooltip
+          <!--<help-tooltip
             v-if="getResourceTypeName(res)"
             :title="getResourceTypeName(res)"
             :isCenter="false"
@@ -34,7 +34,7 @@
                 height="35"
               >
             </b-link>
-          </help-tooltip>
+          </help-tooltip>-->
 
           <help-tooltip
             v-if="getIsCtsCertified(res)"
