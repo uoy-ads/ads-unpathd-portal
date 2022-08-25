@@ -17,7 +17,7 @@ services:
       context: client
       dockerfile: docker/client.dockerfile
     ports:
-      - 8081:80
+      - 80:80
 
 
   ariadne-server:
