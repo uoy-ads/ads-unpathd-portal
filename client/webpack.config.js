@@ -169,6 +169,8 @@ module.exports = env => {
         new CssMinimizerPlugin(),
       ],
     };
+
+    config.output.publicPath = '/unpathd/';
   }
 
   /**
