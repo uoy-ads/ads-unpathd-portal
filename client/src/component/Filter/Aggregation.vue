@@ -26,7 +26,7 @@
           v-for="(bucket, key) in filteredAndSortedBuckets"
           v-bind:key="key"
         >
-          <div v-if="bucket.key && String(bucket.key).trim() && !utils.isInvalid(bucket.key)">
+          <div v-if="bucket.key && String(bucket.key).trim() && !utils.isInvalid(bucket.key) && (String(bucket.key).toLowerCase() !='maritime')">
             <div
               v-if="resultAggIsActive(id, bucket.key)"
               class="flex justify-between items-center px-md py-sm text-md text-white bg-blue hover:bg-blue-90 group transition-all duration-300 cursor-pointer border-t-base"
