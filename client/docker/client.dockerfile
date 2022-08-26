@@ -29,10 +29,13 @@ RUN npm run build-staging
 FROM nginx:1.19.0-alpine AS ariadne-client
 
 # Copy app to server default web root
-COPY --from=ariadne-build /app/dist /usr/share/nginx/html
+#COPY --from=ariadne-build /app/dist /usr/share/nginx/html
+RUN mkdir /usr/share/nginx/html/unpathd
+COPY --from=ariadne-build /app/dist /usr/share/nginx/html/unpathd
 
 # Copy nginx configuration to 
-COPY --from=ariadne-build /app/docker/default.conf /etc/nginx/conf.d/
+#COPY --from=ariadne-build /app/docker/default.conf /etc/nginx/conf.d/
+COPY --from=ariadne-build /app/docker/nginx.conf /etc/nginx/nginx.conf
 
 # Restart and reload new configuration
 # RUN nginx -s reload
