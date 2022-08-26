@@ -156,7 +156,9 @@ searchModule.setTotalRecordsCount();
 let totalRecordsCount = $computed(() => searchModule.getTotalRecordsCount);
 
 const canUseSendButton: boolean = $computed(() => fieldValue !== 'aatSubjects');
-const placeholder: any = $computed(() => props.useCurrentSearch?'Search '+totalRecordsCount+' resources...':'Search in '+totalRecordsCount+' resources...');
+// Have commented this out because the total records count doesn't include the maritime filter
+//const placeholder: any = $computed(() => props.useCurrentSearch?'Search '+totalRecordsCount+' resources...':'Search in '+totalRecordsCount+' resources...');
+const placeholder: any = $computed(() => props.useCurrentSearch?'Search resources...':'Search resources...');
 const helpTexts = $computed(() => searchModule.getHelpTexts);
 const fields = $computed(() => resourceModule.getFields);
 
