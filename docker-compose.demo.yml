@@ -16,8 +16,10 @@ services:
     build:
       context: client
       dockerfile: docker/client.dockerfile
-    ports:
-      - 80:80
+    # ports:
+    #   - 80:80
+    environment:
+      VIRTUAL_PATH: /unpathd/
 
 
   ariadne-server:
@@ -27,8 +29,10 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./server/:/var/www/
-    ports:
-      - 8080:80
+    # ports:
+    #   - 8080:80
+    environment:
+      VIRTUAL_PATH: /unpathd-api/
 
   # elasticsearch:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
@@ -37,3 +41,8 @@ services:
   #   environment:
   #     - discovery.type=single-node
   #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+networks:
+  default:
+    external:
+      name: nginx-proxy
