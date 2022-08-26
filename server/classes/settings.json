@@ -15,25 +15,25 @@
   },
   "elasticsearchEnv": {
     "prod": {
-      "host": "xxx:9200",
-      "index": "xxx",
-      "subject_index": "xxx",
-      "periodHost": "xxx:9200",
-      "periodIndex": "xxx"
+      "host": "elastic.ariadne.d4science.org:9200",
+      "index": "ariadneplus",
+      "subject_index": "aat_ariadne",
+      "periodHost": "elastic.ariadne.d4science.org:9200",
+      "periodIndex": "ariadneplus_periodo"
     },
     "staging": {
       "host": "elastic-test.ariadne.d4science.org:9200",
       "index": "ariadneplus_test",
-      "subject_index": "xxx",
-      "periodHost": "xxx:9200",
-      "periodIndex": "xxx"
+      "subject_index": "aat_ariadne",
+      "periodHost": "elastic-test.ariadne.d4science.org:9200",
+      "periodIndex": "ariadneplus_test_periodo"
     },
     "dev": {
-      "host": "xxx:9200",
-      "index": "xxx",
-      "subject_index": "xxx",
-      "periodHost": "xxx:9200",
-      "periodIndex": "xxx"
+      "host": "elastic-test.ariadne.d4science.org:9200",
+      "index": "ariadneplus_test",
+      "subject_index": "aat_ariadne",
+      "periodHost": "elasticsearch:9200",
+      "periodIndex": "ariadneplus_test_periodo"
     }
   },
   "periodAuthorities": {

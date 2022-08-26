@@ -68,7 +68,7 @@ export const mainNavigation = [
       },
     ],
   },
-  {
+  /*{
     path: '/services',
     name: 'Services',
     icon: 'cog',
@@ -76,7 +76,7 @@ export const mainNavigation = [
     border: 'border-green',
     bg: 'bg-green-20',
     hover: 'hover:bg-green-20',
-  },
+  },*/
   {
     path: '/about',
     name: 'About',
