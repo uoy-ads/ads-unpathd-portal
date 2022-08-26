@@ -160,6 +160,9 @@ module.exports = env => {
     //ariadneApiPath = 'https://demo.snd.gu.se/ariadneplus/html/api';
     //ariadneAssetPath = '/ariadneplus/html/static/assets';
 
+    // ads20demo0
+    config.output.publicPath = '/unpathd/';
+
     config.mode = 'development';
     config.devtool = false;
     config.optimization = {
@@ -170,7 +173,7 @@ module.exports = env => {
       ],
     };
 
-    config.output.publicPath = '/unpathd/';
+    
   }
 
   /**
