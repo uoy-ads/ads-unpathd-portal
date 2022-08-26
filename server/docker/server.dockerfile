@@ -67,3 +67,5 @@ RUN pecl install xdebug \
 
 # Add xdebug configuration.
 COPY /server/docker/xdebug/xdebug.ini /usr/local/etc/php/conf.d/
+
+EXPOSE 80

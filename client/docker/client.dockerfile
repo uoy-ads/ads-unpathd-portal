@@ -39,3 +39,5 @@ COPY --from=ariadne-build /app/docker/default.conf /etc/nginx/conf.d/
 
 CMD ["nginx","-g","daemon off;"]
 
+EXPOSE 80
+
