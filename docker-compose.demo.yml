@@ -20,6 +20,7 @@ services:
     #   - 80:80
     container_name: unpathd
     environment:
+      VIRTUAL_HOST: ads20demo0
       VIRTUAL_PATH: /unpathd/
 
 
@@ -34,6 +35,7 @@ services:
     #   - 8080:80
     container_name: unpathd-api
     environment:
+      VIRTUAL_HOST: ads20demo0
       VIRTUAL_PATH: /unpathd-api/
 
   # elasticsearch:
