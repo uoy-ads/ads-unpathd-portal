@@ -37,6 +37,7 @@ services:
     environment:
       VIRTUAL_HOST: ads20demo0
       VIRTUAL_PATH: /unpathd-api/
+      VIRTUAL_DEST: /
 
   # elasticsearch:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
