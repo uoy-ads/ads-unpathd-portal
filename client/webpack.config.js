@@ -153,7 +153,7 @@ module.exports = env => {
     console.log('ARIADNE Portal - Building with public STAGING config...');
 
     process.env.NODE_ENV = 'staging';
-    ariadneApiPath = 'http://ads20demo0/unpathd-api';
+    ariadneApiPath = 'http://ads20demo0/unpathd-api/api';
 
     // SND - DEMO environment only
     //config.output.publicPath = '/ariadneplus/html/';
