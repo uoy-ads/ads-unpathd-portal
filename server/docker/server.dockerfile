@@ -41,7 +41,6 @@ RUN a2enmod deflate
 
 # Set permissions for apache.
 RUN chown -R www-data:www-data /var/www/html
-RUN chown -R www-data:www-data /var/www/logs
 
 # Set working directory.
 WORKDIR /var/www/html
@@ -51,6 +50,10 @@ COPY  ./server/html/ /var/www/html
 
 # Copy PHP backend
 COPY  ./server/classes/ /var/www/classes
+
+# Copy logs
+COPY  ./server/logs/ /var/www/logs
+RUN chown -R www-data:www-data /var/www/logs
 
 # PHP Composer stuff
 COPY ./server/composer.json /var/www/
