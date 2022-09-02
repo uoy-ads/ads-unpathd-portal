@@ -40,7 +40,7 @@ RUN a2enmod rewrite
 RUN a2enmod deflate
 
 # Create log dir otherwise Monolog throws a fatal error
-RUN mkdir /var/www/log
+RUN mkdir /var/www/logs
 
 # Set permissions for apache.
 RUN chown -R www-data:www-data /var/www/html
