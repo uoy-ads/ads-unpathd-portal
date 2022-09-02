@@ -53,7 +53,7 @@ COPY  ./server/classes/ /var/www/classes
 
 # Copy logs
 COPY  ./server/logs/ /var/www/logs
-RUN chown -R www-data:www-data /var/www/logs
+RUN chown www-data:www-data /var/www/logs && chmod ug+w /var/www/logs
 
 # PHP Composer stuff
 COPY ./server/composer.json /var/www/
