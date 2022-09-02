@@ -40,7 +40,7 @@ RUN a2enmod rewrite
 RUN a2enmod deflate
 
 # Set permissions for apache.
-RUN chown -R www-data:www-data /var/www/html /var/www/logs
+RUN chown -R www-data:www-data /var/www/html
 RUN chown -R www-data:www-data /var/www/logs
 
 # Set working directory.
