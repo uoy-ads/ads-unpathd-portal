@@ -3,7 +3,7 @@ vendor
 node_modules
 npm-debug.log
 .DS_Store
-logs/
+logs/app.log
 server/html/*
 !server/html/api/
 !server/html/.htaccess

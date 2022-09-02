@@ -39,12 +39,8 @@ RUN php -r "readfile('http://getcomposer.org/installer');" | php -- --install-di
 RUN a2enmod rewrite
 RUN a2enmod deflate
 
-# Create log dir otherwise Monolog throws a fatal error
-WORKDIR /var/www/logs
-RUN chown www-data:www-data .
-
 # Set permissions for apache.
-RUN chown -R www-data:www-data /var/www/html
+RUN chown -R www-data:www-data /var/www/html /var/www/logs
 
 # Set working directory.
 WORKDIR /var/www/html
