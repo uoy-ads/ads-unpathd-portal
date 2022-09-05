@@ -51,7 +51,7 @@ COPY  ./server/html/ /var/www/html
 # Copy PHP backend
 COPY  ./server/classes/ /var/www/classes
 
-# Copy logs
+# Copy logs - todo: there must be a better way to get this working?
 COPY  ./server/logs/ /var/www/logs
 RUN touch /var/www/logs/app.log && chown -R www-data:www-data /var/www/logs
 

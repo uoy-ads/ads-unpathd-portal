@@ -162,6 +162,7 @@ module.exports = env => {
 
     // ads20demo0
     config.output.publicPath = '/unpathd/';
+    ariadneAssetPath = '/unpathd/static/assets';
 
     config.mode = 'development';
     config.devtool = false;
