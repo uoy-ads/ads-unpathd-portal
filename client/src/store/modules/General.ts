@@ -29,7 +29,7 @@ export class GeneralModule extends VuexModule {
     let metaEl;
 
     this.updateMeta({
-      title: (meta.title || this.meta.title) + ' - Ariadne portal',
+      title: `${(meta.title || this.meta.title)} - Unpath'd Waters`,
       description: typeof meta.description === 'string' ? meta.description : (this.meta.description || '')
     });
 
