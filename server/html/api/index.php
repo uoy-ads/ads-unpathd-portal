@@ -20,6 +20,9 @@ header('Content-Type: application/json');
 header_remove('X-Powered-By');
 
 $settings = json_decode(file_get_contents('../../classes/settings.json'));
+// append theme settings to settings object
+$theme_settings = json_decode(file_get_contents('../../classes/theme.json'));
+$settings->theme = $theme_settings; 
 
 // Hide all errors and warnings for prod environment
 if( strtolower($settings->environment->elasticsearchEnv) === 'prod' ) {
@@ -116,6 +119,10 @@ switch ($uriParts[0]) {
 
   case 'getTotalRecordsCount':
     echo json_encode($q->getTotalRecordsCount());
+    break;
+
+  case 'themeSettings':
+    echo json_encode($settings->theme);
     break;
 
   default:

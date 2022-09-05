@@ -111,8 +111,8 @@ class Query {
     $filters = QuerySettings::getFilters($_GET);
 
     // get terms from settings
-    if(isset($this->settings->terms)) {
-      foreach ($this->settings->terms as $key => $value) {
+    if(isset($this->settings->theme->terms)) {
+      foreach ($this->settings->theme->terms as $key => $value) {
         $filters[] = [
           'term' => [$key => $value]
         ];
