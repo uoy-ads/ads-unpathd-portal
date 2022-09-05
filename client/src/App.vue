@@ -29,6 +29,7 @@ import '../static/fa/css/all.min.css';
 
 onMounted(() => {
   generalModule.setWindow();
+  generalModule.setThemeSettings();
   window.addEventListener('resize', () => generalModule.setWindow());
 });
 </script>

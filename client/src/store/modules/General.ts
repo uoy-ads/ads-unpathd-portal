@@ -2,6 +2,7 @@
 import { VuexModule, Module, Mutation, Action } from "vuex-class-modules";
 import { frontPageLinks, mainNavigation, services, frontPageImagesTotal, frontPageImageTexts } from './General/static';
 import { publishers } from './General/publishers';
+import axios from 'axios';
 
 export enum LoadingStatus { None, Locked, Background };
 
@@ -18,6 +19,8 @@ export class GeneralModule extends VuexModule {
   private frontPageImageTexts: any = frontPageImageTexts;
   private publishers: any[] = publishers;
   private window: any = {};
+
+  private themeSettings: any = {};
 
   @Action
   setWindow() {
@@ -42,6 +45,11 @@ export class GeneralModule extends VuexModule {
     document.title = this.meta.title;
     metaEl.content = this.meta.description;
   }
+  @Action
+  async setThemeSettings() {
+    const res = await axios.get(process.env.apiUrl + '/getThemeSettings');
+    this.updateThemeSettings( res.data );
+  }
 
   @Mutation
   updateWindow() {
@@ -57,6 +65,11 @@ export class GeneralModule extends VuexModule {
   @Mutation
   updateMeta(meta: any) {
     this.meta = meta;
+  }
+
+  @Mutation
+  updateThemeSettings(themeSettings: any) {
+    this.themeSettings = themeSettings;
   }
 
   get getIsLoading(): boolean {
@@ -110,4 +123,9 @@ export class GeneralModule extends VuexModule {
   get getWindow(): any {
     return this.window;
   }
+
+  get getThemeSettings(): any[] {
+    return this.themeSettings;
+  }
+
 }

@@ -121,7 +121,7 @@ switch ($uriParts[0]) {
     echo json_encode($q->getTotalRecordsCount());
     break;
 
-  case 'themeSettings':
+  case 'getThemeSettings':
     echo json_encode($settings->theme);
     break;
 
