@@ -27,6 +27,12 @@ and <b-link href="https://ariadne-infrastructure.eu/" target="_blank" class="und
         >
           <i class="fas fa-info-circle text-md mr-xs"></i> Unpath'd Waters portal guide
         </b-link>
+
+        <span class="pl-xs pr-sm">|</span>
+
+        <b-link
+         href="https://www.york.ac.uk/about/legal-statements/"
+         class="hover:underline">University of York Legal Statements</b-link>
       </div>
       <div id="footer-teleport-target"></div>
     </div>
