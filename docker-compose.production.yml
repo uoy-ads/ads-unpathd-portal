@@ -1,13 +1,3 @@
-#
-# Settings for Ariadne Server Module
-#
-# NOTICE:
-# When deploying
-#   for prod/staging comment IN ariaden-client service
-#   for develpment comment OUT ariadne-client service
-#
-
-
 version: '3'
 
 services:
@@ -16,8 +6,6 @@ services:
     build:
       context: client
       dockerfile: docker/client.dockerfile
-    # ports:
-    #   - 80:80
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk
@@ -31,21 +19,10 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./server/:/var/www/
-    # ports:
-    #   - 8080:80
     container_name: unpathd-api
     environment:
       VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk
       VIRTUAL_PATH: /api/
-      #VIRTUAL_DEST: /
-
-  # elasticsearch:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
-  #   ports:
-  #     - 9200:9200
-  #   environment:
-  #     - discovery.type=single-node
-  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
 networks:
   default:
