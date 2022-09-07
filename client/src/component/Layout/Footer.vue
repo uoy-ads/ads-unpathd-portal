@@ -1,21 +1,19 @@
 <template>
   <footer class="bg-darkGray-40 xl:px-base absolute bottom-0 w-full h-8x text-mmd">
     <div class="max-w-screen-xl h-full mx-auto px-base flex items-center">
-      <img :src="`${ assets }/eu-flag.png`" alt="eu flag" class="hidden md:block">
+      <img :src="`${ assets }/TaNC-AHRC-logo.png`" alt="eu flag" class="hidden md:block" style="max-width:300px;">
       <div class="text-white md:pl-base">
         <p class="inline sm:block mb-xs">
-          &copy; {{ new Date().getFullYear() }} the ARIADNEplus partners. All rights reserved, visit
-          <b-link href="https://ariadne-infrastructure.eu/legal/" target="_blank" class="underline">
-            this page
-          </b-link>
-          for further details.
+          Unpath’d Waters is funded by the <b-link href="https://www.ukri.org/councils/ahrc/" target="_blank" class="underline">Arts and Humanities Research Council</b-link> under the <b-link href="https://www.nationalcollection.org.uk/" target="_blank" class="underline">Towards
+a National Collection</b-link> programme.
         </p>
         <p class="inline sm:block mb-xs">
-          ARIADNEplus is funded by the European Commission Horizon2020 programme under under Grant Agreement n. 823914.
+          The Unpath’d Waters portal reuses e-infrastructure constructed within the EU-funded ARIADNE
+and <b-link href="https://ariadne-infrastructure.eu/" target="_blank" class="underline">ARIADNEplus</b-link> project.
         </p>
 
         <b-link
-          to="/contact"
+          href="mailto:help@archaeologydataservice.ac.uk"
           class="hover:underline"
         >
           <i class="fas fa-envelope mr-xs"></i> Contact
@@ -27,7 +25,7 @@
           to="/guide"
           class="hover:underline"
         >
-          <i class="fas fa-info-circle text-md mr-xs"></i> ARIADNE portal guide
+          <i class="fas fa-info-circle text-md mr-xs"></i> Unpath'd Waters portal guide
         </b-link>
       </div>
       <div id="footer-teleport-target"></div>
