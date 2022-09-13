@@ -133,10 +133,14 @@ onUnmounted(() => {
 });
 
 const setTimeLine = () => {
+  console.log('setTimeLine');
+  console.log(result);
   const buckets = result?.range_buckets?.range_agg?.buckets;
+  console.log(buckets);
   range = null;
   isZoomed = false;
 
+  console.log(isLoading);
   if (isLoading) {
     return;
   }
@@ -146,6 +150,7 @@ const setTimeLine = () => {
       chart = null;
       hasChartData = false;
     }
+    console.log('return 154');
     return;
   }
 
