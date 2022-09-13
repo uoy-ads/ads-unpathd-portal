@@ -180,7 +180,7 @@ export class SearchModule extends VuexModule {
   async setAggregationSearch(routerQuery:any) {
 
     // Get timline aggregation only if route matches one of these
-    const timelineRoutes = ['/search','/browse/when'];
+    const timelineRoutes = ['/search','/browse/when', '/'];
     let getTimeline: boolean = timelineRoutes.find(element => element == router.currentRoute.value.path)?true:false;
     let params = {
       ...routerQuery,
