@@ -205,7 +205,8 @@ module.exports = env => {
 
     process.env.NODE_ENV = 'production';
 
-    ariadneApiPath = 'https://unpathd.ads.ac.uk/api';
+    //ariadneApiPath = 'https://unpathd.ads.ac.uk/api';
+    ariadneApiPath = 'http://ads20unpathd0/api';
 
     config.mode = 'production';
     config.devtool = false;
