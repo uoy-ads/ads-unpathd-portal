@@ -7,7 +7,7 @@ services:
       context: client
       dockerfile: docker/client.dockerfile
       args:
-        buildscript: build-production
+        buildscript: build
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk
