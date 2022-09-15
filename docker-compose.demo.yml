@@ -6,6 +6,8 @@ services:
     build:
       context: client
       dockerfile: docker/client.dockerfile
+      args:
+        buildscript: build-staging
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20demo0

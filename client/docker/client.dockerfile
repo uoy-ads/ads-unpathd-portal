@@ -21,7 +21,8 @@ COPY package*.json ./
 # install from package-lock.json
 RUN npm ci
 COPY . .
-RUN npm run build-staging
+ARG buildscript
+RUN npm run $buildscript
 
 #
 # Setup NGINX server
