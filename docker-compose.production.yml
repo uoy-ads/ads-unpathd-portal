@@ -5,10 +5,7 @@ services:
   ariadne-client:
     build:
       context: client
-      dockerfile: docker/client.dockerfile
-      args:
-        buildscript: build
-        nginxconfigfile: nginx-production.conf 
+      dockerfile: docker/client-production.dockerfile
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk

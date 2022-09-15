@@ -21,8 +21,7 @@ COPY package*.json ./
 # install from package-lock.json
 RUN npm ci
 COPY . .
-ARG buildscript
-RUN npm run $buildscript
+RUN npm run build-staging
 
 #
 # Setup NGINX server
@@ -30,14 +29,11 @@ RUN npm run $buildscript
 FROM nginx:1.19.0-alpine AS ariadne-client
 
 # Copy app to server default web root
-#COPY --from=ariadne-build /app/dist /usr/share/nginx/html
 RUN mkdir /usr/share/nginx/html/unpathd
 COPY --from=ariadne-build /app/dist /usr/share/nginx/html/unpathd
 
-# Copy nginx configuration to 
-#COPY --from=ariadne-build /app/docker/default.conf /etc/nginx/conf.d/
-ARG nginxconfigfile
-COPY --from=ariadne-build /app/docker/$nginxconfigfile /etc/nginx/nginx.conf
+# Copy nginx configuration
+COPY --from=ariadne-build /app/docker/nginx-demo.conf /etc/nginx/nginx.conf
 
 # Restart and reload new configuration
 # RUN nginx -s reload
@@ -45,4 +41,5 @@ COPY --from=ariadne-build /app/docker/$nginxconfigfile /etc/nginx/nginx.conf
 CMD ["nginx","-g","daemon off;"]
 
 EXPOSE 80
+
 

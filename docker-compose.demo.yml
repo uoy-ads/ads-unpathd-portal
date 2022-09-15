@@ -5,10 +5,7 @@ services:
   ariadne-client:
     build:
       context: client
-      dockerfile: docker/client.dockerfile
-      args:
-        buildscript: build-staging
-        nginxconfigfile: nginx-demo.conf 
+      dockerfile: docker/client-demo.dockerfile
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20demo0
