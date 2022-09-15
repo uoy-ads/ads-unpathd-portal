@@ -1,8 +1,6 @@
 #! /bin/bash
 if [ "$HOSTNAME" = ads20unpathd0 ]; then
-    DOCKER_FILE = 'docker-compose.production.yml';
+    sudo docker compose -f docker-compose.production.yml up --build -d
 else
-    DOCKER_FILE = 'docker-compose.demo.yml'
+    sudo docker compose -f docker-compose.demo.yml up --build -d
 fi
-
-sudo docker compose -f $DOCKER_FILE up --build -d
