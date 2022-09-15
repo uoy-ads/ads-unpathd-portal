@@ -10,7 +10,7 @@ services:
         buildscript: build
     container_name: unpathd
     environment:
-      VIRTUAL_HOST: ads20unpathd0
+      VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk
       VIRTUAL_PATH: /
 
 
@@ -23,7 +23,7 @@ services:
       - ./server/:/var/www/
     container_name: unpathd-api
     environment:
-      VIRTUAL_HOST: ads20unpathd0
+      VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk
       VIRTUAL_PATH: /api/
 
 networks:
