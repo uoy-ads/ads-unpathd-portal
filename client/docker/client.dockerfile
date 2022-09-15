@@ -22,6 +22,7 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 ARG buildscript
+ARG nginxconfigfile
 RUN npm run $buildscript
 
 #
@@ -36,7 +37,7 @@ COPY --from=ariadne-build /app/dist /usr/share/nginx/html/unpathd
 
 # Copy nginx configuration to 
 #COPY --from=ariadne-build /app/docker/default.conf /etc/nginx/conf.d/
-COPY --from=ariadne-build /app/docker/nginx.conf /etc/nginx/nginx.conf
+COPY --from=ariadne-build /app/docker/$nginxconfigfile /etc/nginx/nginx.conf
 
 # Restart and reload new configuration
 # RUN nginx -s reload

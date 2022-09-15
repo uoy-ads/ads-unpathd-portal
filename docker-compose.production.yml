@@ -8,6 +8,7 @@ services:
       dockerfile: docker/client.dockerfile
       args:
         buildscript: build
+        nginxconfigfile: nginx-production.conf 
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk
