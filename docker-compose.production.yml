@@ -6,6 +6,7 @@ services:
     build:
       context: client
       dockerfile: docker/client-production.dockerfile
+    restart: always
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20unpathd0,unpathd.ads.ac.uk
@@ -16,6 +17,7 @@ services:
     build:
       context: .
       dockerfile: server/docker/server.dockerfile
+    restart: always
     working_dir: /var/www/html
     volumes:
       - ./server/:/var/www/
