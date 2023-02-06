@@ -9,6 +9,7 @@
       :autoShow="resultAggAnyActive"
       :hover="true"
       :height="height"
+      :maxHeight="maxHeight"
     >
       <div :id="bucketListId" class="relative">
         <filter-aggregation-options
@@ -19,6 +20,7 @@
           :sortKeyOption="sortKeyOption"
           :sortKeyOptionLabel="sortKeyOptionLabel"
           :sortOrder="sortOrder"
+          :getMore="getMore"
           @searchUpdate="setBucketListHeight"
         />
 
@@ -35,14 +37,14 @@
               <span class="flex-grow break-word pr-lg">
                 <i v-if="id === 'publisher' && findPublisher(bucket.key)"
                   class="fas fa-info-circle text-white pr-sm py-sm transition-color duration-300 hover:text-green"
-                  @click.prevent.stop="() => router.push(utils.paramsToString('/publisher/' + findPublisher(bucket.key).slug, { publisher: bucket.key }))">
+                  @click.prevent.stop="() => router.push(utils.paramsToString('/publisher/', { publisher: bucket.key }))">
+                </i>
+                <i v-else-if="id === 'derivedSubject'"
+                  class="fas fa-info-circle text-white pr-sm py-sm transition-color duration-300 hover:text-green"
+                  @click.prevent.stop="() => router.push(utils.paramsToString('/subject/' + bucket.key, { derivedSubject: bucket.key }))">
                 </i>
 
-                <span v-if="id === 'derivedSubjectId' && params.derivedSubjectIdLabel">
-                  {{ utils.sentenceCase(params.derivedSubjectIdLabel) }}
-                </span>
-
-                <span v-else-if="id === 'fields' && fields.some(f => f.val === bucket.key)">
+                <span v-if="id === 'fields' && fields.some(f => f.val === bucket.key)">
                   {{ fields.find(f => f.val === bucket.key).text }}
                 </span>
 
@@ -51,11 +53,11 @@
                 </span>
               </span>
 
-              <span class="bg-white rounded-lg py-xs px-sm text-blue text-sm font-bold group-hover:text-red mr-sm">
+              <span class="bg-white rounded-lg py-xs px-sm text-blue text-sm font-bold group-hover:text-red">
                 <i class="fa-times fas align-middle transition-color duration-300 text-sm" />
               </span>
 
-              <span v-if="bucket.doc_count" class="rounded-lg bg-lightGray py-xs px-sm text-blue text-sm font-bold">
+              <span v-if="bucket.doc_count" class="rounded-lg bg-lightGray py-xs px-sm text-blue text-sm font-bold ml-sm">
                 {{ bucket.doc_count }}
               </span>
             </div>
@@ -67,25 +69,31 @@
             >
               <span v-if="id === 'publisher' && findPublisher(bucket.key)">
                 <i class="fas fa-info-circle text-blue pr-sm py-sm transition-color duration-300 hover:text-green"
-                  @click.prevent.stop="() => router.push(utils.paramsToString('/publisher/' + findPublisher(bucket.key).slug, { publisher: bucket.key }))">
+                  @click.prevent.stop="() => router.push(utils.paramsToString('/publisher/', { publisher: bucket.key }))">
+                </i>
+              </span>
+              <span v-else-if="id === 'derivedSubject'">
+                <i class="fas fa-info-circle text-blue pr-sm py-sm transition-color duration-300 hover:text-green"
+                  @click.prevent.stop="() => router.push(utils.paramsToString('/subject/' + bucket.key, { derivedSubject: bucket.key }))">
                 </i>
               </span>
 
               <span class="flex-grow break-word pr-lg">
                 {{ getFilterText(sortKey ? bucket[sortKey] : bucket.key) }}
+                <span v-if="id === 'culturalPeriods' && bucket.region" class="text-midGray">
+                  ({{ utils.getCountryCode(bucket.region) }})
+                </span>
+              </span>
+
+              <span v-if="id === 'culturalPeriods' && bucket.doc_count">
+                <span class="whitespace-nowrap bg-lightGray rounded-lg py-xs px-sm mx-xs text-midGray text-sm font-bold">Start: {{ bucket.start }}</span>
               </span>
 
               <span v-if="bucket.doc_count" class="whitespace-nowrap bg-lightGray rounded-lg py-xs px-sm text-midGray text-sm font-bold">
                 {{ bucket.doc_count }} {{ docCountSuffix }}
               </span>
 
-              <div v-if="bucket.extraLabels">
-                <!-- show pills only for periods -->
-                <span v-if="id === 'filterByCulturalPeriods'">
-                  <span class="whitespace-nowrap bg-lightGray rounded-lg py-xs px-sm mx-xs text-midGray text-sm font-bold">Start: {{bucket.start}}</span>
-                  <span class="whitespace-nowrap bg-lightGray rounded-lg py-xs px-sm mx-xs text-midGray text-sm font-bold">{{synonyms.getCountryCode(bucket.region)}}</span>
-                </span>
-
+              <div v-if="bucket.extraLabels" class="ml-sm">
                 <i class="fas fa-question-circle"
                   @mouseenter="toggleTooltip($event, true)"
                   @mouseleave="toggleTooltip($event, false)"
@@ -93,7 +101,9 @@
 
                 <div class="fixed z-20 hidden bg-blue text-white p-sm">
                   <span v-for="(label, key) in bucket.extraLabels" v-bind:key="key">
-                    <strong>{{ key }}:</strong> {{ label }}<br/>
+                    <span v-if="label">
+                      <strong>{{ utils.sentenceCase(utils.splitCase(key)) }}:</strong> {{ label }}<br/>
+                    </span>
                   </span>
                 </div>
               </div>
@@ -104,16 +114,17 @@
 
         <div
           v-if="noBucketMatch(id)"
-          class="bg-red text-white p-sm text-md rounded-b-base"
+          class="bg-red text-white p-sm text-md"
         >
           No results found.
         </div>
 
         <div
           v-else-if="hasMoreDocs"
-          class="bg-red text-white p-sm text-md rounded-b-base"
+          class="bg-yellow text-white p-sm text-md cursor-pointer hover:bg-green transition-background duration-300"
+          @click="getMore++"
         >
-          Some options are currently not visible. Use the search field above to narrow down this list.
+          Get 20 more results..
         </div>
       </div>
     </list-accordion>
@@ -123,13 +134,11 @@
 <script setup lang="ts">
 import { watch, nextTick } from 'vue';
 import { $ref, $computed, $$ } from 'vue/macros';
-import { searchModule, resourceModule, aggregationModule, generalModule } from "@/store/modules";
-import { useRouter } from 'vue-router'
+import { resourceModule, aggregationModule, generalModule, searchModule } from "@/store/modules";
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import utils from '@/utils/utils';
 import ListAccordion from '@/component/List/Accordion.vue';
 import FilterAggregationOptions from './Aggregation/Options.vue';
-import HelpTooltip from '@/component/Help/Tooltip.vue';
-import synonyms from "@/utils/synonyms";
 
 let height = $ref(0);
 const bucketListId: string = 'bucketList-' + utils.getUniqueId();
@@ -141,28 +150,28 @@ interface Props {
   shortSortNames?: boolean,
   sortKey?: string,
   sortKeyOption?: string, // If set, used instead if sortKey
-  sortKeyOptionLabel?: string, // Paired with sortKeyOption. If set, used instead if sortKey
+  sortKeyOptionLabel?: string, // Paired with sortKeyOption. If set, used instead of sortKey
   sortOrder?: string,
   sentenceCaseFilterText?: boolean,
   docCountSuffix?: '', // String suffix for doc_count in bucket aggregations
+  maxHeight?: number,
 };
 
-const { id, item, shortSortNames, sortKey, sortOrder, sentenceCaseFilterText = true, docCountSuffix } = defineProps<Props>();
+const { id, item, shortSortNames, sortKey, sortOrder, sentenceCaseFilterText = true, docCountSuffix, maxHeight } = defineProps<Props>();
 
-const params = $computed(() => searchModule.getParams);
 const fields = $computed(() => resourceModule.getFields);
 const aggType = $computed(() => aggregationModule.getTypes.find(type => type.id === id));
 const resultAggTitle: string = $computed(() => aggregationModule.getTitle(id));
 const resultAggDescription: string = $computed(() => aggregationModule.getDescription(id));
 const resultAggAnyActive: boolean = $computed(() => aggregationModule.getAnyActive(id, item?.buckets));
+let getMore = $ref(0);
 
 const hasMoreDocs: number = $computed(() => {
   const options = aggregationModule.getOptions[id];
   let count;
-  if (options?.search) {
+  if (options?.search || (getMore && options?.data?.buckets)) {
     count = options?.data?.sum_other_doc_count;
-  }
-  else {
+  } else {
     count = item?.sum_other_doc_count;
   }
   return count ?? 0;
@@ -174,23 +183,31 @@ const initShow: boolean = $computed(() => {
 });
 
 const filteredAndSortedBuckets: Array<any> = $computed(() => {
-  let list = item?.buckets;
+  let list = item?.buckets || [];
   const options = aggregationModule.getOptions[id];
+  if (options && ((options.search || getMore) && options.data?.buckets)) {
+    list = options.data.buckets;
+  }
+
+  // check missing from params (if clicks get 20 more, or have from search won't show from result set)
+  const params = searchModule.getParams[id];
+  if (params) {
+    params.split('|').forEach((val: string) => {
+      const lcVal = val.trim().toLowerCase();
+      if (!list.some((b: any) => (b.key || '').trim().toLowerCase() === lcVal)) {
+        list = list.concat([{ key: val, doc_count: 0 }]);
+      }
+    });
+  }
+
+  // sort
   if (options) {
-    let { search, sortBy, sortOrder, data } = options;
-
-    // replace list with search result
-    if (search && data?.buckets) {
-      list = data.buckets;
-    }
-
-    // sort
+    let { sortBy, sortOrder } = options;
     list = utils.sortListByValue(list, sortBy, sortOrder);
-
-    // period filters needs extra sorting here to put active items at top
-    if (id === 'temporalRegion' || id === 'filterByCulturalPeriods') {
-      list.sort((a: any, b: any) => resultAggIsActive(id, a.key) ? -1 : 1)
-    }
+  }
+  const active = list.filter((it: any) => resultAggIsActive(id, it.key));
+  if (active.length) {
+    list = active.concat(list.filter((it: any) => !resultAggIsActive(id, it.key)));
   }
   return list;
 });
@@ -229,4 +246,6 @@ const toggleTooltip = (e: any, show: boolean) => {
 };
 
 watch($$(filteredAndSortedBuckets), setBucketListHeight, { deep: true });
+
+onBeforeRouteLeave(() => aggregationModule.setOptionsToDefault());
 </script>

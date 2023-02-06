@@ -9,3 +9,5 @@ server/html/*
 !server/html/.htaccess
 !server/theme/settings.json
 server/composer.phar
+server/classes/AAT/data/*
+server/classes/settings.json

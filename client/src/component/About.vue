@@ -21,6 +21,12 @@
     programme of how the UK's national collection can be made more accessible. The portal is
     built upon technology developed within the framework of the European <a href="https://ariadne-infrastructure.eu/" class="text-blue transition-colors duration-300 hover:text-darkGray hover:underline">ARIADNE</a> research
     infrastructure, and is managed by the <a href="https://archaeologydataservice.ac.uk/" class="text-blue transition-colors duration-300 hover:text-darkGray hover:underline">Archaeology Data Service</a>.</p>
+    
+    <h2 class="text-lg mb-md">Disclaimer</h2>
+    <p class="mb-md">Whilst every care has been taken in preparing the information published via the ARIADNE portal, the ARIADNE partners do not guarantee the accuracy or currency of the content. The consortium provides all material on an “as is” and “as available” basis. To the fullest extent permitted by law, the ARIADNE consortium excludes all representations, warranties, or conditions (whether expressed or implied) as to the comprehensiveness, accuracy, reliability, or otherwise of all material available via the portal. For further information about the material available via the portal, including its currency, users are advised to contact the data publisher.</p>
+    <p class="mb-md">The ARIADNE consortium cannot be held responsible for any errors or omissions and accepts no liability whatsoever for any loss or damage howsoever arising.</p>
+    <p class="mb-md">This website includes links to third party websites. These links are used to provide further information and are not intended to signify that the ARIADNE consortium endorses such websites and/or their content. The ARIADNE consortium takes no responsibility for any loss or damage suffered as a result of using information published on any of the pages of the linked websites.</p>
+    <p class="mb-3x">Third party material located through the use of the ARIADNE portal may be subject to specific use constraints. It is the responsibility of users to be aware of such constraints and to abide by them.</p>
 
   </div>
 </template>

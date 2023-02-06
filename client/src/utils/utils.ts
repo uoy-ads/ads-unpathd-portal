@@ -1,6 +1,9 @@
 // @ts-ignore
 import striptags from 'striptags';
+import ISO6391 from 'iso-639-1';
+
 const debounceMap: any = {};
+let lookup: any = null;
 
 export default {
 
@@ -11,6 +14,10 @@ export default {
 
   delay (ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  },
+
+  last (arr: any[]) {
+    return arr[arr.length - 1];
   },
 
   getCopy (obj: any) {
@@ -208,19 +215,80 @@ export default {
     return gradient;
   },
 
+  addMerged (arr: Array<any>, item: any, prop: string) {
+    const index = arr.findIndex(val => val[prop] === item[prop]);
+    if (index > -1) {
+      arr[index] = item;
+    } else {
+      arr.push(item);
+    }
+    return arr;
+  },
+
   tmpId: 1,
   getUniqueId(): number {
     return this.tmpId++
   },
 
-  /**
-   * Trim text to given max length
-   *
-   * @param text Text to trim
-   * @param length Max length of string
-   * @returns If text is short than length return text, else return substring text to length
-   */
+  // Trim text to given max length, If text is short than length return text, else return substring text to length
   trimString(text: string, maxLength: number): string {
     return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  },
+
+  // Escapes html
+  escHtml (html: string) {
+    const map: any = {
+      '<': '&lt;',
+      "'": '&#39;',
+      '"': '&quot;',
+      '>': '&gt;'
+    }
+    return String(html || '').replace(/[<'">]/g, char => map[char]);
+  },
+
+  // simple auto link text
+  autolinkText (text: string) {
+    return text.replace(/(?:https?):\/\/[a-z0-9_\.\:\-\+\/]*[a-z0-9\/]/gi, url => '<a class="text-blue hover:underline word-break" target="_blank" href="' + this.escHtml(url) + '">' + this.escHtml(url) + '</a>');
+  },
+
+  // Returns common used marker types
+  getMarkerTypes (generalModule: any) {
+    return {
+      point: {
+        marker: generalModule.getAssetsDir + '/leaflet/marker-icon-geopoint.png',
+        shape: generalModule.getAssetsDir + '/leaflet/marker-icon-geoshape.png',
+        current: generalModule.getAssetsDir + '/leaflet/marker-icon-current.png'
+      },
+      approx: {
+        marker: generalModule.getAssetsDir + '/leaflet/marker-icon-geopoint-approx.png',
+        shape: generalModule.getAssetsDir + '/leaflet/marker-icon-geoshape-approx.png'
+      },
+      shadow: {
+        marker: generalModule.getAssetsDir + '/leaflet/marker-shadow.png'
+      },
+      combo: {
+        marker: generalModule.getAssetsDir + '/leaflet/marker-icon-combo.png'
+      }
+    };
+  },
+
+  // Languages are given as ISO6391-1. Present them as whole names on screen.
+  getLanguage(lang: string) {
+    if (lang) {
+      if ((lang.trim() == 'und') || (lang.trim() == '')) {
+        return 'N/A';
+      }
+      // Native language representation - ISO6391.getNativeName(lang)
+      return this.sentenceCase(ISO6391.getName(lang.trim().toLowerCase()));
+    }
+    return 'N/A';
+  },
+
+  // Get country short name
+  getCountryCode(country: string) {
+    if (!lookup) {
+      lookup = require('country-code-lookup');
+    }
+    return lookup.byCountry(country)?.iso3 ?? country;
   }
 };

@@ -6,17 +6,15 @@
     </h3>
 
     <div v-if="resource.originalId" :class="itemClass">
-      <b class="break-word" :class="bClass">Original ID:</b>
-      <b-link
-        v-if="utils.validUrl(resource.originalId)"
-        :href="resource.originalId"
-        target="_blank"
-        class="break-word"
-        :useDefaultStyle="true"
-      >
-        {{ resource.originalId }}
-      </b-link>
-      <span v-else>{{ resource.originalId }}</span>
+      <b :class="bClass">Original ID:</b>
+      <span class="break-word">{{ resource.originalId }}</span>
+    </div>
+
+    <div v-if="Array.isArray(resource.otherId) && resource.otherId.length" :class="itemClass">
+      <b :class="bClass">Other ID:</b>
+      <span v-for="otherId in resource.otherId" :class="{ 'block mt-xs': resource.otherId.length > 1 }">
+        <span class="break-word">{{ otherId }}</span>
+      </span>
     </div>
 
     <div v-if="utils.validUrl(resource.landingPage)" :class="itemClass">
@@ -33,7 +31,7 @@
     </div>
 
     <div v-if="resource.language" :class="itemClass">
-      <b :class="bClass">Language:</b> {{ synonyms.getLanguage(resource.language) }}
+      <b :class="bClass">Language:</b> {{ utils.getLanguage(resource.language) }}
     </div>
 
     <resource-filtered-items
@@ -54,58 +52,50 @@
 
     <div v-if="resource.extent && resource.extent.length" :class="itemClass">
       <b :class="bClass">Extent:</b>
-      {{ resource.extent.join(', ') }}
+      <span>{{ resource.extent.join(', ') }}</span>
     </div>
 
-    <div class="flex border-b-base border-gray pb-md mb-md">
-      <div
-        v-if="resource.derivedSubject"
-        class="flex-1"
-      >
-        <resource-filtered-items
-          :items="resource.derivedSubject"
-          :class="itemClass"
-          filter="prefLabel"
-          prop="id"
-          query="derivedSubjectId"
-          slotType="link"
-          title="Subject - AAT"
+    <resource-filtered-items
+      :items="resource.derivedSubject"
+      :class="itemClass"
+      filter="prefLabel"
+      prop="prefLabel"
+      query="derivedSubject"
+      slotType="link"
+      title="Subject - AAT"
+    >
+      <template v-slot:helpIcon>
+        <help-tooltip
+          title="Read more about AAT"
+          top="0"
+          left="1.25rem"
         >
-          <template v-slot:helpIcon>
-            <help-tooltip
-              title="Read more about AAT"
-              top="0"
-              left="1.25rem"
-            >
-              <a
-                href="https://www.getty.edu/research/tools/vocabularies/aat/about.html"
-                target="_blank"
-              >
-                <i class='fas fa-question-circle ml-xs'/>
-              </a>
-            </help-tooltip>
-          </template>
+          <a
+            href="https://www.getty.edu/research/tools/vocabularies/aat/about.html"
+            target="_blank"
+          >
+            <i class='fas fa-question-circle ml-xs'/>
+          </a>
+        </help-tooltip>
+      </template>
 
-          <template v-slot="{ item }">
-            {{ item.prefLabel }} <span v-if="item.lang">({{ item.lang }})</span>
-          </template>
-        </resource-filtered-items>
-      </div>
+      <template v-slot="{ item }">
+        <b-link class="text-blue hover:underline hover:text-darkGray transition-color duration-300"
+          :to="utils.paramsToString('/subject/' + utils.last(item.id.split('/')), { derivedSubject: item.prefLabel })">
+          <i class="fas fa-info-circle mr-xs"></i>
+        </b-link>
+        {{ item.prefLabel }} <span v-if="item.lang">({{ item.lang }})</span>
+      </template>
+    </resource-filtered-items>
 
-      <div
-        v-if="resource.nativeSubject"
-        class="flex-1"
-      >
-        <resource-filtered-items
-          :items="resource.nativeSubject"
-          :class="itemClass"
-          filter="prefLabel"
-          title="Subject - Original"
-          query="nativeSubject"
-          slotType="prop"
-        />
-      </div>
-    </div>
+    <resource-filtered-items
+      :items="resource.nativeSubject"
+      :class="itemClass"
+      filter="prefLabel"
+      title="Subject - Original"
+      query="nativeSubject"
+      slotType="prop"
+    />
 
     <resource-filtered-items
       :items="resource.keyword"
@@ -122,16 +112,48 @@
       title="Dating"
     >
       <template v-slot="{ item }">
+        <span v-if="getPeriodo(item)">
+          <span class="mr-xs" @mouseenter="toggleTooltip($event, true)" @mouseleave="toggleTooltip($event, false)">
+            <i class="fas fa-question-circle text-blue hover:text-darkGray transition-color duration-300 mr-xs"/>
+            <div class="fixed z-20 hidden">
+              <div class="bg-blue text-white p-sm pb-xs relative">
+                <div class="absolute" style="width:20px;height:30px;left:-10px;top:0"></div>
+                <div class="mb-xs">
+                  <b>Period:</b>&nbsp;
+                  <b-link :to="utils.paramsToString('/search/', { culturalPeriods: getPeriodo(item).key, culturalLabels: getPeriodo(item).key + ':' + getPeriodo(item).filterLabel + (getPeriodo(item).region ? (' (' + utils.getCountryCode(getPeriodo(item).region) + ')') : '') })" className="text-white hover:underline">
+                    <i class="fas fa-search"></i>
+                    {{ getPeriodo(item).filterLabel }} ({{ getPeriodo(item).region ? utils.getCountryCode(getPeriodo(item).region) : '' }})
+                  </b-link>
+                </div>
+                <div class="mb-xs" v-if="getPeriodo(item).region">
+                  <b>Region:</b>&nbsp;
+                  <b-link :to="utils.paramsToString('/search/', { temporalRegion: getPeriodo(item).region })" className="text-white hover:underline">
+                    <i class="fas fa-search"></i>
+                    {{ getPeriodo(item).region }}
+                  </b-link>
+                </div>
+                <div v-if="item.from && item.until" class="mb-xs">
+                  <b>Timespan:</b>&nbsp;{{ ': ' + item.from + ' to ' +  item.until }}
+                </div>
+                <div v-for="(label, key) in getPeriodo(item).extraLabels" v-bind:key="key" class="mb-xs">
+                  <span v-if="label">
+                    <b>{{ utils.sentenceCase(utils.splitCase(key)) }}:</b>&nbsp;{{ label }}<br/>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </span>
+        </span>
+
         <b-link
           v-if="item.periodName"
           :to="utils.paramsToString('/search', { temporal: item.periodName })"
         >
-          {{ utils.sentenceCase(item.periodName) }}{{ item.periodName ? ': ' : '' }}
+          {{ utils.sentenceCase(item.periodName) }}
         </b-link>
-
-        <template v-if="item.from && item.until">
-          {{ item.from + ' to ' +  item.until }}
-        </template>
+        <span v-if="item.from && item.until">
+          {{ ': ' + item.from + ' to ' +  item.until }}
+        </span>
       </template>
     </resource-filtered-items>
 
@@ -139,6 +161,7 @@
       :items="resource.spatial"
       :class="itemClass"
       filter="placeName,country,location"
+      filterUnique="placeName"
       title="Place"
     >
       <template v-slot="{ item }">
@@ -179,17 +202,17 @@
 
     <div v-if="resource.wasCreated" :class="itemClass">
       <b :class="bClass">Created:</b>
-      {{ utils.formatDate(resource.wasCreated) }}
+      <span>{{ utils.formatDate(resource.wasCreated) }}</span>
     </div>
 
     <div v-if="resource.issued" :class="itemClass">
       <b :class="bClass">Issued:</b>
-      {{ utils.formatDate(resource.issued) }}
+      <span>{{ utils.formatDate(resource.issued) }}</span>
     </div>
 
     <div v-if="resource.modified" :class="itemClass">
       <b :class="bClass">Last updated:</b>
-      {{ utils.formatDate(resource.modified) }}
+      <span>{{ utils.formatDate(resource.modified) }}</span>
     </div>
 
     <resource-filtered-items
@@ -226,7 +249,6 @@
 import { $computed } from 'vue/macros';
 import { resourceModule } from "@/store/modules";
 import utils from '@/utils/utils';
-import synonyms from '@/utils/synonyms';
 import BLink from '@/component/Base/Link.vue';
 import HelpTooltip from '@/component/Help/Tooltip.vue';
 import ResourceFilteredItems from '../FilteredItems.vue';
@@ -237,4 +259,17 @@ defineProps<{
 }>();
 
 const resource = $computed(() => resourceModule.getResource);
+
+const getPeriodo = (item: any) => {
+  if (resource.periodo) {
+    const uri = utils.last(item?.uri?.split('/') || [])?.toLowerCase();
+    return resource.periodo.find((p: any) => p?.key?.toLowerCase() === uri);
+  }
+  return null;
+}
+
+const toggleTooltip = (e: any, show: boolean) => {
+  const rect = e.target.getBoundingClientRect();
+  e.target.firstElementChild.nextElementSibling.style.cssText = `width:300px; top: ${rect.top - 5}px; left: ${rect.left + 20}px; display:${show ? 'block' : 'none'};`;
+};
 </script>

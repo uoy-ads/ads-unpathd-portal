@@ -2,15 +2,7 @@
 
 namespace Elastic;
 
-use \geoPHP\geoPHP;
-
 class Utils {
-
-
-  private CONST TOP_LEFT = 315; // Bearing Degrees - North West
-  private CONST BOTTOM_RIGHT = 135; // Bearing Degrees - South East
-  private CONST POINT_EXTEND_KM = 0.5;
-
   /**
     * Escape lucene special chars
     */
@@ -58,7 +50,7 @@ class Utils {
         self::recordToXml($val, $label);
 
       } else {
-        $xml->addChild($key, htmlspecialchars($val));
+        $xml->addChild($key, htmlspecialchars($val ?? ''));
       }
     }
   }

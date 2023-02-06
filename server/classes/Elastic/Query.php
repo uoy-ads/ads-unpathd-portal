@@ -2,45 +2,41 @@
 
 namespace Elastic;
 
+use Application\AppSettings;
 use Elastic\QuerySettings;
-use Elastic\QueryPeriod;
 use Elastic\Timeline;
 use Elastic\Utils;
 use Elastic\GeoUtils;
 use Elastic\DataNormalizer;
 use Elasticsearch\ClientBuilder;
-use \geoPHP\geoPHP;
+use Periodo\Periodo;
 
 class Query {
+  private static $inst = null;
   private $settings;
-  private $logger;
   private $normalizer;
   private $elasticEnv;
   private $client = null;
   private $aggregationsReqFilter = []; // Aggregation filters from uri
 
-  public function __construct($settings, $logger) {
-    $this->settings = $settings;
-    $this->logger = $logger;
-    $this->normalizer = new DataNormalizer($settings);
-
-    // Set current Elastic environment - prod|dev according to environment->elasticsearchEnv from settings.json
-    $this->elasticEnv = $this->settings->elasticsearchEnv->{$this->settings->environment->elasticsearchEnv};
-
+  public function __construct() {
+    $this->settings = AppSettings::getSettings();
+    $this->normalizer = new DataNormalizer($this->settings);
+    $this->elasticEnv = AppSettings::getSettingsEnv();
   }
 
-  // sets client host
-  public function setClient($clientHost) {
-    // Setup Elastic client
-    $this->client = ClientBuilder::create()
-    ->setHosts([$clientHost])
-    ->build();
+  // returns instance of class (singleton)
+  public static function instance() {
+    if (!self::$inst) {
+      self::$inst = new Query();
+    }
+    return self::$inst;
   }
 
-  // lazy get client - default env host if not called "setClient" before
+  // get elastic client
   public function getClient() {
     if (!$this->client) {
-      $this->setClient($this->elasticEnv->host);
+      $this->client = ClientBuilder::create()->setHosts([$this->elasticEnv->host])->build();
     }
     return $this->client;
   }
@@ -49,25 +45,10 @@ class Query {
    * Search Elastic db with given URI parameters
    */
   public function search() {
-
-    $query = $this->getCurrentQuery();
-
     if (isset($_GET['mapq'])) {
-      // This is the Map requesting data. Push map specific query attributes to main
-      $query = $this->getMapQuery($query);
-      //$query['size'] = $this->getMapResultSize($query);
-
-      // When size is smaler than threshhold, geogrid is considered part of the result since we need to render heatmap
-      if( intval($query['size']) <= $this->settings->environment->mapMarkerThreshhold ) {
-        $query['aggregations']['geogrid'] = QuerySettings::getSearchAggregations()['geogrid']; // remove when centroids are uploaded to public
-        $query['aggregations']['geogrid_centroid'] = QuerySettings::getSearchAggregations()['geogrid_centroid'];
-      }
+      return $this->getSearchAggregationData();
     }
-
-    $result = $this->elasticDoSearch($query);
-    $r = $this->resultToFrontend($result);
-    return $r;
-
+    return $this->resultToFrontend($this->elasticDoSearch($this->getCurrentQuery()));
   }
 
   /**
@@ -75,8 +56,7 @@ class Query {
    * Notice, this is the main body query, aggregations excluded!
    */
   private function getCurrentQuery () {
-
-    $query['size'] = 10;
+    $query['size'] = $this->getSize();
     $query['from'] = $this->getFrom();
     $query['sort'] = $this->getSort();
 
@@ -94,7 +74,7 @@ class Query {
 
     // Handle incoming user input query string
     if (!empty($_GET['q']) ) {
-      $validFields = QuerySettings::getValidSearchableFields($_GET['q']);
+      $validFields = QuerySettings::getValidSearchableFields(Utils::escapeLuceneValue($_GET['q'], false));
       if($searchInField && array_key_exists($searchInField, $validFields) ) {
         $innerQuery['bool']['must'] = $validFields[$searchInField]['query'];
       } else {
@@ -125,88 +105,16 @@ class Query {
     }
 
     return $query;
-
   }
 
   /**
    * Map specific query.
    * Adds additional map parameters to main query
-   *
-   * @param array $mainQuery Base query, containg filters, terms, aggregations and query string param.
-   * @return array Query with additional map specific attributes
    */
   private function getMapQuery($mainQuery) {
-
-    // Fetch only needed fields for map view
     $mainQuery['_source'] = ['title','description','resourceType','publisher','ariadneSubject','spatial'];
 
-    // Bounding box string has the following order:
-    // 'topLeft.lat, topLeft.lon, bottomRight.lat, bottomRight.lon'
-    if (!empty($_GET['bbox'])) {
-
-      $bbox = explode(',', $_GET['bbox']);
-
-      // Geopoints
-      $boundingBoxFilters[] = [
-        'nested' => [
-          'path' => 'spatial',
-          'query' => [
-            'geo_bounding_box' => [
-                'spatial.geopoint' => [
-                  'top_left' => [
-                    'lat' => floatval($bbox[0]),
-                    'lon' => floatval($bbox[1])
-                  ],
-                  'bottom_right' => [
-                    'lat' => floatval($bbox[2]),
-                    'lon' => floatval($bbox[3])
-                  ]
-                ]
-            ]
-          ]
-        ]
-      ];
-
-      // Possible Geo shapes nested query
-      // topLeft.lon, topLeft.lat, bottomRight.lon,bottomRight.lat
-      $possibleGeoShapes = ['polygon','boundingbox'];
-      foreach($possibleGeoShapes as $geoShape) {
-        $boundingBoxFilters[] = [
-          'nested' => [
-            'path' => 'spatial',
-            'query' => [
-              'geo_shape' => [
-                'spatial.'.$geoShape => [
-                  'shape' => [
-                    'type' => 'envelope',
-                    'relation' => 'within',
-                    'coordinates' => [
-                      [
-                        floatval($bbox[1]),
-                        floatval($bbox[0])
-                      ],
-                      [
-                        floatval($bbox[3]),
-                        floatval($bbox[2])
-                      ]
-                    ]
-                  ]
-                ]
-              ]
-            ]
-          ]
-        ];
-      }
-
-      $mainQuery['query']['bool']['filter'][] = [
-        'bool' => [
-          'should' => $boundingBoxFilters
-        ]
-      ];
-
-    }
-
-    // Viewport
+    // // Viewport
     $mainQuery['aggregations']['viewport'] = [
       'nested' => [
         'path' => 'spatial'
@@ -228,10 +136,10 @@ class Query {
         'query' => [
           'bool' => [
             'should' => [
-              array( 'exists' => ['field'=> 'spatial.geopoint']), // remove when centroids are uploaded to public
-              array( 'exists' => ['field'=> 'spatial.polygon']), // remove when centroids are uploaded to public
-              array( 'exists' => ['field'=> 'spatial.boundingbox']), // remove when centroids are uploaded to public
-              array( 'exists' => ['field'=> 'spatial.centroid'])
+              ['exists' => ['field' => 'spatial.geopoint']], // remove when centroids are uploaded to public
+              ['exists' => ['field' => 'spatial.polygon']], // remove when centroids are uploaded to public
+              ['exists' => ['field' => 'spatial.boundingbox']], // remove when centroids are uploaded to public
+              ['exists' => ['field' => 'spatial.centroid']]
             ]
           ]
         ]
@@ -241,140 +149,100 @@ class Query {
     /* Do roundtrip to ES to see if result is more than 500. If result count is more
        than 500 the map doesn't need records data because it's rendering heatmap with
        data from aggregations->geogrid */
-    $mainQuery['size'] = $this->getMapResultSize($mainQuery);
-    return $mainQuery;
-
-  }
-
-  /**
-   * Get map result size.
-   * Does an extra query roundtrip to backend to calculate the record size needed for map data.
-   *
-   * @param array Query params
-   * @return int Map specific query record size
-   */
-  private function getMapResultSize(&$query): int {
-    $count = $this->getResultCount($query);
-    if( $count <= $this->settings->environment->mapMarkerThreshhold ) {
-      return $count; // Render markers - records needed to render markers
+    $count = 0;
+    try {
+      $result = $this->getClient()->count([
+        'index' => $this->elasticEnv->index,
+        'body' => ['query' => $mainQuery['query']],
+      ]);
+      $count = intval($result['count'] ?? 0);
+    } catch (\Exception $ex) {
+      if (AppSettings::isLogging()) {
+        AppSettings::debugLog($ex->getMessage());
+      }
     }
-    return 0; // Render heatmap, no records needed
+    if ($count <= $this->settings->environment->mapMarkerThreshhold) { // Render markers - records needed to render markers
+      $mainQuery['size'] = $count;
+    } else {
+      $mainQuery['size'] = 0;
+    }
+    return $mainQuery;
   }
 
   /**
    * Get data specific for aggregations / filters
-   *
-   * @param array Query params
-   * @return array Mini map data
    */
   public function getSearchAggregationData() {
-
-    // get main query
     $query = $this->getCurrentQuery();
-
-    // Push aggregation to main query
     $query['aggregations'] = QuerySettings::getSearchAggregations();
+    $query['size'] = 0;
+    unset($query['_source']);
+    unset($query['sort']);
+    unset($query['from']);
 
     // This is the map search requesting data. Push map specific queri attributes to main query
     if (isset($_GET['mapq'])) {
       $query = $this->getMapQuery($query);
+    } else {
+      unset($query['aggregations']['geogridCentroid']);
     }
 
-    // No records needed for aggregations
-    $query['size'] = 0;
-
-    // Remove unnessesary attributes
-    unset($query['_source']);
-    unset($query['sort']);
-    unset($query['from']);
-    unset($query['aggregations']['geogrid']);
-
-    $range = empty($_GET['range']) ? null : explode(',', $_GET['range']);
-
     // timeline specific query
-    if( isset($_GET['timeline']) && filter_var($_GET['timeline'], FILTER_VALIDATE_BOOLEAN) ) {
+    if (!empty($_GET['timeline'])) {
+      if (!empty($_GET['onlyTimeline'])) {
+        $query['aggregations'] = [];
+      }
+      $range = empty($_GET['range']) ? null : explode(',', $_GET['range']);
       $query['aggregations']['range_buckets'] = Timeline::prepareRangeBucketsAggregation($range);
     }
 
-    $result = $this->elasticDoSearch($query);
-    return $this->resultToFrontend($result);
-
+    return $this->resultToFrontend($this->elasticDoSearch($query));
   }
 
   /**
    * Get data specific for mini map
-   *
-   * @param array Query params
-   * @return array Mini map data
    */
   public function getMiniMapData() {
-
-    // get main query
-    $query = $this->getCurrentQuery();
-    // push map specifik attributes to query
-    $query = $this->getMapQuery($query);
-
-    // remove unnessesary attributes
-    // Minimap only needs title and spatial data
-    $query['_source'] = ['title','spatial'];
+    $query = $this->getMapQuery($this->getCurrentQuery());
+    $query['_source'] = ['title', 'spatial'];
     unset($query['sort']);
+    unset($query['from']);
 
-    if($query['size'] <= $this->settings->environment->mapMarkerThreshhold ) {
+    if ($query['size'] <= $this->settings->environment->mapMarkerThreshhold) {
       // mini map renders heatmap, query only aggs needed for heatmap
-      $query['aggregations']['geogrid'] = QuerySettings::getSearchAggregations()['geogrid']; // remove when centroids are uploaded to public
-      $query['aggregations']['geogrid_centroid'] = QuerySettings::getSearchAggregations()['geogrid_centroid'];
+      $query['aggregations']['geogridCentroid'] = QuerySettings::getSearchAggregations()['geogridCentroid'];
     } else {
       // mini map renders markers, no aggs nedded because markers uses records spatial data
       unset($query['aggregations']);
     }
 
-    $result = $this->elasticDoSearch($query);
-    return $this->resultToFrontend($result);
-
+    return $this->resultToFrontend($this->elasticDoSearch($query));
   }
 
   /**
    * Get single record from Elastic db
    */
   public function getRecord ($recordId) {
-
     $searchParams = [
-      'id' => $recordId,
+      'id' => Utils::escapeLuceneValue($recordId),
       'index' => $this->elasticEnv->index,
     ];
 
     $record = $this->elasticDoGet($searchParams);
+    if (empty($record)) {
+      die;
+    }
 
     $record = $record['_source'];
     $record['id'] = $recordId;
-
-    // TODO: Reduce roundtrips to Elastic!
-    // Create one query for all of these.
     $record['similar'] = $this->getThematicallySimilarItems($record, $recordId);
     $record['nearby'] = $this->getNearbySpatialResources($record);
-    //$record['collection'] = $this->getCollectionItems($record, $recordId);
     $record['collection'] = $this->getCollectionItems($record);
     $record['partOf'] = $this->getItemsPartOf($record, $recordId);
     $record['isAboutResource'] = $this->getIsAboutResources($record);
+    $record['periodo'] = $this->getPeriodsForRecord($record);
 
-    $record = $this->normalizer->splitLanguages($record);
-
-    return $record;
-  }
-
-  /**
-   * Get all records from Elastic db
-   */
-  public function getAllRecords () {
-    $searchParams = [];
-    $searchParams['from'] = $this->getFrom();
-
-    $sort = $this->getSort();
-    if ($sort) {
-      $searchParams['sort'] = $sort;
-    }
-    return $this->elasticDoSearch($searchParams)['hits'];
-
+    return $this->normalizer->splitLanguages($record);
   }
 
   /**
@@ -500,7 +368,7 @@ class Query {
             'query' => [
               'bool' => [
                 'must' => [
-                  ['prefix' => ['prefLabels.label' => Utils::escapeLuceneValue($q)]]
+                  ['match_phrase_prefix' => ['prefLabels.label' => Utils::escapeLuceneValue($q).'*']]
                 ],
               ],
             ],
@@ -508,7 +376,7 @@ class Query {
         ],
       ];
 
-      $search = $this->elasticDoSearch($query, $this->elasticEnv->subject_index);
+      $search = $this->elasticDoSearch($query, $this->elasticEnv->subjectIndex);
 
       // set if there are more total results > size
       $result['hasMoreResults'] = $search['hits']['total']['value'] > count($search['hits']['hits']);
@@ -534,10 +402,8 @@ class Query {
           'variants' => $variants,
         ];
       }
-
       return $result;
     }
-
     return null;
   }
 
@@ -545,136 +411,167 @@ class Query {
    * Gets autocomplete filters
    */
   public function autocompleteFilter() {
-
-    $q = trim($_GET['filterQuery'] ?? '');
+    $q = Utils::escapeLuceneValue($_GET['filterQuery'] ?? '');
     $filterName = trim($_GET['filterName'] ?? '');
     $query = '';
 
+    if ((!$q && empty($_GET['filterSize'])) || !$filterName) {
+      return null;
+    }
+
     $currentQuery = $this->getCurrentQuery()['query'];
 
-    if ($q && $filterName) {
-      $sw = strtolower($filterName);
-      switch (strtolower($filterName)) {
-        case 'contributor':
-          $query = AutocompleteFilterQuery::contributor($q,$currentQuery);
-          break;
-        case 'nativesubject':
-          $query = AutocompleteFilterQuery::nativeSubject($q,$currentQuery);
-          break;
-        case 'ariadnesubject':
-          $query = AutocompleteFilterQuery::ariadneSubject($q,$currentQuery);
-          break;
-        case 'derivedsubject':
-          $query = AutocompleteFilterQuery::derivedSubject($q,$currentQuery);
-          break;
-        case 'publisher':
-          $query = AutocompleteFilterQuery::publisher($q,$currentQuery);
-          break;
-        case 'temporal':
-          $query = AutocompleteFilterQuery::temporal($q,$currentQuery);
-          return $this->elasticDoSearch($query, $this->elasticEnv->index)['aggregations']['temporal_agg'];
-        case 'temporalregion':
-          $query = AutocompleteFilterQuery::temporalRegion($q,$currentQuery);
-          $this->setClient($this->settings->elasticsearchEnv->{$this->settings->environment->elasticsearchEnv}->periodHost);
-          $result = $this->elasticDoSearch($query, $this->elasticEnv->periodIndex)['aggregations'];
-          return $result;
-          break;
-        case 'period':
-          // Special for periods is periodCountry param to filter on user selected country
-          $temporalRegion = trim($_GET['temporalRegion'] ?? '');
-          $query = AutocompleteFilterQuery::periods($q, $temporalRegion);
-          $this->setClient($this->settings->elasticsearchEnv->{$this->settings->environment->elasticsearchEnv}->periodHost);
-          // Disguise result as aggregation.
-          $periodsResult = $this->periodsToAggs($this->elasticDoSearch($query, $this->elasticEnv->periodIndex)); 
-          return $periodsResult;
-          break;
-      }
+    $size = intval($_GET['filterSize'] ?? 0);
+    $size = is_int($size) ? ($size * 20) + 20 : 20;
 
-      return $this->elasticDoSearch($query, $this->elasticEnv->index)['aggregations'];
+    switch (strtolower($filterName)) {
+      case 'contributor':
+        $query = AutocompleteFilterQuery::contributor($q, $currentQuery, $size);
+        break;
+
+      case 'nativesubject':
+        $query = AutocompleteFilterQuery::nativeSubject($q, $currentQuery, $size);
+        break;
+
+      case 'ariadnesubject':
+        $query = AutocompleteFilterQuery::ariadneSubject($q, $currentQuery, $size);
+        break;
+
+      case 'derivedsubject':
+        $query = AutocompleteFilterQuery::derivedSubject($q, $currentQuery, $size);
+        break;
+
+      case 'publisher':
+        $query = AutocompleteFilterQuery::publisher($q, $currentQuery, $size);
+        break;
+
+      case 'temporal':
+        $query = AutocompleteFilterQuery::temporal($q, $currentQuery, $size);
+        return $this->elasticDoSearch($query, $this->elasticEnv->index)['aggregations']['temporal_agg'];
+
+      case 'temporalregion':
+        $query = AutocompleteFilterQuery::temporalRegion($q, $currentQuery, $size);
+        $result = $this->elasticDoSearch($query, $this->elasticEnv->periodIndex)['aggregations'];
+        return $result;
+
+      case 'culturalperiods':
+        // Special for periods is periodCountry param to filter on user selected country
+        $temporalRegion = trim($_GET['temporalRegion'] ?? '');
+        $query = AutocompleteFilterQuery::periods($q, $temporalRegion, $size);
+        return $this->periodsToAggs($this->elasticDoSearch($query, $this->elasticEnv->periodIndex));
+
+      default:
+        return null;
 
     }
 
-    return null;
-
+    return $this->elasticDoSearch($query, $this->elasticEnv->index)['aggregations'];
   }
 
 
   /**
    * Special for Periods autocompletion.
-   * Disguise query response as an aggregation formated array before returning 
+   * Disguise query response as an aggregation formated array before returning
    * to frontend since the frontend Aggregation filter can only handle aggregations.
    */
   private function periodsToAggs($periodsResult) {
-
     $buckets = [];
-    foreach($periodsResult['hits']['hits'] as $periodKey=>$period) {
-      $bucket = [];
-      
-      $i = array_search('en', array_column($period['_source']['localizedLabels'], 'language'));
-      $bucket['key'] = $period['_source']['localizedLabels'][$i]['label']??'N/A';
-      $bucket['region'] = $period['_source']['spatialCoverage']['label']??'N/A';
-      $bucket['start'] = $period['_source']['start'][0]['year']+0; // for sorting
 
-      $bucket['extraLabels']['Start'] = $period['_source']['start'][0]['label'].'  ( Year: '. $period['_source']['start'][0]['year'].' )';
-      $bucket['extraLabels']['Stop'] = $period['_source']['stop'][0]['label'].'  ( Year: '.$period['_source']['stop'][0]['year'].' )';
-      $bucket['extraLabels']['Native period name'] = ($period['_source']['label']??'N/A');
-      $bucket['extraLabels']['Authority'] = ($period['_source']['authority']['title']??'N/A');
+    if (!empty($periodsResult['hits']['hits'])) {
+      foreach ($periodsResult['hits']['hits'] as $periodKey => $period) {
+        $bucket = [];
+        $bucket['key'] = $period['_id'];
+        $bucket['region'] = $period['_source']['spatialCoverage'][0]['label'] ?? '';
+        $bucket['start'] = ($period['_source']['start']['year'] ?? 0) +0; // for sorting
+        $bucket['filterLabel'] = $period['_source']['label'];
+        $bucket['doc_count'] = $period['_source']['total'];
 
-      if(isset($period['_source']['localizedLabels'])) {
-        $localLabels = '';
-        foreach($period['_source']['localizedLabels'] as $label) {
-          $localLabels .= $label['label'] . ' ('.$label['language'].'), ';
+        if (!empty($period['_source']['localizedLabels']) && ($period['_source']['languageTag'] !== 'en' || !$bucket['filterLabel'])) {
+          foreach (array_reverse($period['_source']['localizedLabels']) as $loc) {
+            if ($loc['language'] === 'en') {
+              $bucket['filterLabel'] = $loc['label'];
+              if ($bucket['filterLabel'] === $period['_source']['label']) {
+                break;
+              }
+            }
+          }
         }
-        $bucket['extraLabels']['Localized labels'] = $localLabels;
+        $bucket['filterLabel'] = $bucket['filterLabel'] ?: 'Unknown';
+
+        if (!empty($period['_source']['timestamp'])) {
+          $time = intval($period['_source']['timestamp'] ?? 0);
+          if ($time && $time < time()) {
+            $bucket['hasUpdate'] = true;
+          }
+        }
+
+        $bucket['timespan'] = ($period['_source']['start']['year'] ?? 0) . ', ' . ($period['_source']['stop']['year'] ?? 0); // poc/test
+
+        $bucket['extraLabels']['start'] = $period['_source']['start']['label'] . ' (Year: ' . ($period['_source']['start']['year'] ?? 'N/A'). ') ';
+        $bucket['extraLabels']['stop'] = $period['_source']['stop']['label'] . ' (Year: ' . ($period['_source']['stop']['year'] ?? 'N/A') . ')';
+        $bucket['extraLabels']['nativePeriodName'] = $period['_source']['label'] ?? '';
+        $bucket['extraLabels']['authority'] = $period['_source']['authority'] ?? '';
+
+        if (!empty($period['_source']['localizedLabels'])) {
+          $localLabels = '';
+          foreach ($period['_source']['localizedLabels'] as $label) {
+            $localLabels .= $label['label'] . ' ('. $label['language'] . '), ';
+          }
+          $bucket['extraLabels']['localizedLabels'] = trim($localLabels, ', ');
+        }
+        if (!empty($period['_source']['spatialCoverage'])) {
+          $spatials = '';
+          foreach ($period['_source']['spatialCoverage'] as $spat) {
+            $spatials .= $spat['label'] . ', ';
+          }
+          $bucket['extraLabels']['region'] = trim($spatials, ', ');
+        }
+        $buckets[] = $bucket;
       }
-      
-      $bucket['extraLabels']['Region'] = ($period['_source']['spatialCoverage']['label']??'N/A');
-      $buckets[] = $bucket;
     }
-    
+
     $aggs['filtered_agg']['buckets'] = $buckets;
-    $aggs['filtered_agg']['sum_other_doc_count'] = $periodsResult['hits']['total']['value']-20<=0 ? 0:$periodsResult['hits']['total']['value'];
 
+    $size = intval($_GET['filterSize'] ?? 0);
+    $size = is_int($size) ? ($size * 20) + 20 : 20;
+    $aggs['filtered_agg']['sum_other_doc_count'] = !$size || $size < $periodsResult['hits']['total']['value'] ? $periodsResult['hits']['total']['value'] : 0;
     return $aggs;
-
   }
 
   /**
    * Frontend wants data in a specifik form.
-   *
-   * @param array Result form ES to be formated
-   * @return array Array formated according to frontend specs
    */
-  private function resultToFrontend(&$result) {
+  private function resultToFrontend ($result) {
+    // Probably the only error message we want to pass on to frontend
+    if (isset($result['error']['message'])) {
+      $jsonMsg = json_decode($result['error']['message']);
+      if (isset($jsonMsg->error->root_cause[0]->reason)) {
+        if (str_starts_with($jsonMsg->error->root_cause[0]->reason, 'Result window is too large')) {
+          return [
+            'error' => [
+              'msg' => "Scrolling exceeded maximum"
+            ]
+          ];
+        }
+      }
+      return [];
+    }
+
     $hits = [];
-    foreach ($result['hits']['hits'] as $hitMeta=>$hit) {
-      $hitNormalized = $this->normalizer->splitLanguages($hit['_source']);
-      $hits[] = [
-        'id' => $hit['_id'],
-        'data' => $hitNormalized
-      ];
+    if (!empty($result['hits']['hits'])) {
+      foreach ($result['hits']['hits'] as $hitMeta=>$hit) {
+        $hitNormalized = $this->normalizer->splitLanguages($hit['_source']);
+        $hits[] = [
+          'id' => $hit['_id'],
+          'data' => $hitNormalized
+        ];
+      }
     }
     return [
-      'total' => $result['hits']['total'],
+      'total' => $result['hits']['total'] ?? 0,
       'hits' => $hits,
       'aggregations' => $result['aggregations'] ?? [],
     ];
-  }
-
-  /**
-   * Get result count for given query
-   *
-   * @param array Query params
-   * @return int The total record count resulting with given query
-   */
-  private function getResultCount(&$query): int {
-    $countQuery['size'] = 0;
-    $countQuery['query'] = $query['query'];
-    $result = $this->elasticDoSearch($countQuery);
-    if($result['hits']['total']['value']) {
-      return intval( $result['hits']['total']['value'] );
-    }
-    return 0;
   }
 
   /**
@@ -705,15 +602,22 @@ class Query {
       if (!$from || $from < 2) {
         $from = 0;
       } else {
-        $from = ($from - 1) * 10;
+        $from = ($from - 1) * $this->getSize();
       }
     }
     return $from;
   }
 
   /**
+   * Size - amount of posts per page
+   */
+  private function getSize () {
+    $size = intval($_GET['size'] ?? 20);
+    return min(max($size, 0), 50);
+  }
+
+  /**
    * Get spatial nearby from given record
-   * http://localhost:8080/api/getNearbySpatialResources/CD236FB9-44EA-34C9-9231-C61B2BF13DDD
    */
   public function getNearbySpatialResources($record) {
     $gUtils = new GeoUtils($this);
@@ -766,7 +670,40 @@ class Query {
       ];
     }
     return $ret;
+  }
 
+  /**
+   * Returns all periods for a single record
+   */
+  private function getPeriodsForRecord ($record) {
+    if (empty($record['temporal'])) {
+      return null;
+    }
+    $periods = [];
+    foreach ($record['temporal'] as $temporal) {
+      $arr = explode('/', $temporal['uri'] ?? '');
+      if (in_array('n2t.net', $arr)) {
+        $periods[] = [
+          'match' => [
+            'id' => Utils::escapeLuceneValue(end($arr)),
+          ],
+        ];
+      }
+    }
+    if (empty($periods)) {
+      return null;
+    }
+    return $this->periodsToAggs($this->elasticDoSearch([
+      'query' => [
+        'bool' => [
+          'must' => [
+            'bool' => [
+              'should' => $periods,
+            ],
+          ],
+        ],
+      ],
+    ], $this->elasticEnv->periodIndex))['filtered_agg']['buckets'] ?? null;
   }
 
   /**
@@ -1014,38 +951,46 @@ class Query {
    * Gets info about a single aat subject
    */
   public function getSubject ($id) {
+    if (!is_numeric($id)) { // if not an id - try to find the id matching the title in ariadne index
+      $title = Utils::escapeLuceneValue(urldecode($id));
+      $derivedSubjects = $this->elasticDoSearch([
+        '_source' => ['derivedSubject'],
+        'size' => 1,
+        'query' => [
+          'bool' => [
+            'must' => [
+              'match' => [
+                'derivedSubject.prefLabel.raw' => $title,
+              ],
+            ],
+          ],
+        ],
+      ])['hits']['hits'][0]['_source']['derivedSubject'] ?? null;
+
+      if ($derivedSubjects) {
+        foreach ($derivedSubjects as $sub) {
+          if ($sub['prefLabel'] === $title) {
+            $id = explode('/', $sub['id']);
+            $id = end($id);
+          }
+        }
+      }
+    }
+
+    if (!$id) {
+      return null;
+    }
 
     $subject = $this->elasticDoGet([
       'id' => $id,
-      'index' => $this->elasticEnv->subject_index,
+      'index' => $this->elasticEnv->subjectIndex,
     ]);
 
     $subject = $subject['_source'];
     $subject['id'] = $id;
-    $subject['connectedTotal'] = $this->getTotalConnectedSubjects($id);
     $subject['subSubjects'] = $this->getSubSubjects($id);
 
     return $subject;
-  }
-
-  /**
-   * Returns subjects total amount of connected subjects
-   */
-  public function getTotalConnectedSubjects ($id) {
-    $params = [
-      'size' => 0,
-      'query' => [
-        'bool' => [
-          'filter' => [
-            'term' => [
-              'derivedSubject.id' => $id,
-            ],
-          ],
-        ],
-      ],
-    ];
-
-    return $this->elasticDoSearch($params)['hits']['total']['value'] ?? 0;
   }
 
   /**
@@ -1068,7 +1013,7 @@ class Query {
       ],
     ];
 
-    $subs = $this->elasticDoSearch($params, $this->elasticEnv->subject_index)['hits']['hits'] ?? [];
+    $subs = $this->elasticDoSearch($params, $this->elasticEnv->subjectIndex)['hits']['hits'] ?? [];
     $ret = [];
 
     foreach ($subs as $sub) {
@@ -1082,35 +1027,100 @@ class Query {
     return $ret;
   }
 
-
+  // Get method for normalizer (used in geoutils)
   public function getNormalizer() {
     return $this->normalizer;
   }
 
+  // Returns all period regions
+  // Get countries aggregation query from periods index
   public function getPeriodRegions() {
-    $qp = new QueryPeriod();
-    $this->setClient($this->settings->elasticsearchEnv->{$this->settings->environment->elasticsearchEnv}->periodHost);
-    $result = $this->elasticDoSearch($qp->getPeriodRegionsQuery(), $this->elasticEnv->periodIndex);
-    return $this->resultToFrontend($result);
+    $query = [
+      'size' => 0,
+      'aggregations' => [
+        'periodCountry' => [
+          'terms' => [
+            'field' => 'spatialCoverage.label.raw',
+            'order' => [ '_count' => 'desc' ],
+            'size' => 20,
+          ],
+        ],
+      ],
+    ];
+    return $this->resultToFrontend($this->elasticDoSearch($query, $this->elasticEnv->periodIndex));
   }
 
+  // Get periods for country - default any countries
   public function getPeriodsForCountry() {
     $temporalRegion = trim($_GET['temporalRegion'] ?? '');
-    $qp = new QueryPeriod();
-    $this->setClient($this->settings->elasticsearchEnv->{$this->settings->environment->elasticsearchEnv}->periodHost);
-    $result = $this->elasticDoSearch($qp->getPeriodsForCountryQuery($temporalRegion), $this->elasticEnv->periodIndex);
+    $query = [
+      '_source' => ['authority', 'label', 'languageTag', 'spatialCoverage', 'localizedLabels', 'start', 'stop', 'total', 'timestamp'],
+      'size' => 20,
+      'sort' => ['start.year' => ['order' => 'asc']],
+    ];
+    if (!$temporalRegion) {
+      $query['query']['bool']['must'] = ['match_all' => new \stdClass()];
+    } else {
+      $parts = [];
+      foreach (explode('|', $temporalRegion) as $region) {
+        $parts[] = [
+          'match' => [
+            'spatialCoverage.label.raw' => Utils::escapeLuceneValue($region),
+          ],
+        ];
+      }
+      $query['query'] = [
+        'bool' => [
+          'must' => [
+            'bool' => [
+              'should' => $parts,
+            ],
+          ],
+        ],
+      ];
+    }
+    return $this->periodsToAggs($this->elasticDoSearch($query, $this->elasticEnv->periodIndex)); // disguise as aggregations
+  }
 
-    return $this->periodsToAggs($result); // disguise as aggregations
-    //return $this->resultToFrontend($result);
+  // Automatically update periods once a day
+  public function maybeUpdatePeriods() {
+    $result = $this->elasticDoSearch([
+      'size' => 1,
+      '_source' => ['timestamp'],
+      'query' => [
+        'match_all' => new \stdClass(),
+      ],
+    ], $this->elasticEnv->periodIndex);
 
+    $time = intval($result['hits']['hits'][0]['_source']['timestamp'] ?? 0);
+    if ($time && $time < time()) {
+      new Periodo(true);
+    }
+  }
+
+  // Returns all services and publishers
+  public function getServicesAndPublishers () {
+    $params = [ 'size' => 10000 ];
+    $services = $this->elasticDoSearch($params, $this->elasticEnv->servicesIndex)['hits']['hits'] ?? [];
+    $publishers = $this->elasticDoSearch($params, $this->elasticEnv->publishersIndex)['hits']['hits'] ?? [];
+    return [
+      'services' => array_map(function ($s) { return $s['_source']; }, $services),
+      'publishers' => array_map(function ($p) { return $p['_source']; }, $publishers),
+    ];
   }
 
   /**
    * Get total records count in main index
    */
   public function getTotalRecordsCount() {
-    $searchParams = ['index'=>$this->elasticEnv->index];
-    return $this->getClient()->count($searchParams)['count'];
+    try {
+      return $this->getClient()->count(['index' => $this->elasticEnv->index])['count'] ?? 0;
+    } catch (\Exception $ex) {
+      if (AppSettings::isLogging()) {
+        AppSettings::debugLog($ex->getMessage());
+      }
+    }
+    return 0;
   }
 
   /**
@@ -1119,28 +1129,25 @@ class Query {
   private function elasticDoGet ($searchParams) {
     try {
       $result = $this->getClient()->get($searchParams);
-      $this->logger->debug('Request URI: '. $_SERVER['REQUEST_URI']);
-      $this->logger->debug(
-        debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['function'] .
-        ' - ' . json_encode($searchParams, JSON_UNESCAPED_SLASHES)
-      );
-
+      if (AppSettings::isLogging()) {
+        AppSettings::debugLog('Request URI: '. $_SERVER['REQUEST_URI']);
+        AppSettings::debugLog(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['function'] . ' - ' . json_encode($searchParams, JSON_UNESCAPED_SLASHES));
+      }
       return $result;
 
     } catch (\Exception $e) {
-      $this->logger->error($e->getMessage());
-      $this->logger->debug(json_encode($searchParams, JSON_UNESCAPED_SLASHES));
+      if (AppSettings::isLogging()) {
+        AppSettings::debugLog($e->getMessage());
+        AppSettings::debugLog(json_encode($searchParams, JSON_UNESCAPED_SLASHES));
+      }
       exit;
     }
   }
-
 
   /**
    * Search Elastic host db
    */
   public function elasticDoSearch ($searchParams, $index = null) {
-
-    //$searchParams['track_total_hits'] = true;
     $searchParams['track_total_hits'] = true;
 
     $params = [
@@ -1150,21 +1157,23 @@ class Query {
 
     try {
       $result = $this->getClient()->search($params);
-      $this->logger->debug('Request URI: '. $_SERVER['REQUEST_URI']);
-      $this->logger->debug(
-        debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['function'] .
-        ' - ' . json_encode($searchParams, JSON_UNESCAPED_SLASHES)
-        //' - ES Index: ' . $params['index']
-      );
-      //$this->logger->debug($params['index'] . ' - ' . json_encode($searchParams, JSON_UNESCAPED_SLASHES));
-
-      $beautifiedResult = $this->normalizer->aggsBucketsBeautifier($result, $this->aggregationsReqFilter);
-      return $beautifiedResult;
+      if (AppSettings::isLogging()) {
+        AppSettings::debugLog('Request URI: '. $_SERVER['REQUEST_URI']);
+        AppSettings::debugLog(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['function'] . ' - ' . json_encode($searchParams, JSON_UNESCAPED_SLASHES));
+      }
+      return $this->normalizer->normalizeAggs($result, $this->aggregationsReqFilter);
 
     } catch (\Exception $e) {
-      $this->logger->error($e->getMessage());
-      $this->logger->debug(json_encode($searchParams, JSON_UNESCAPED_SLASHES));
-      exit;
+      if (AppSettings::isLogging()) {
+        AppSettings::debugLog($e->getMessage());
+        AppSettings::debugLog(json_encode($searchParams, JSON_UNESCAPED_SLASHES));
+      }
+      return [
+        'error' => [
+          'code' => $e->getCode(),
+          'message'=> $e->getMessage()
+        ]
+      ];
     }
   }
 }

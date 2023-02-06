@@ -4,7 +4,8 @@ import axios from 'axios';
 import utils from '@/utils/utils';
 import router from '@/router';
 import { LoadingStatus, GeneralModule } from './General';
-import { sortOptions, helpTexts } from './Search/static';
+import { sortOptions, perPageOptions, helpTexts } from './Search/static';
+import { aggregationModule } from "../modules";
 
 export interface helpText {
   id: string,
@@ -14,21 +15,21 @@ export interface helpText {
 
 @Module
 export class SearchModule extends VuexModule {
-
   private generalModule: GeneralModule;
-
   private params: any = {};
   private result: any = {};
   private autocomplete: any = {};
   private sortOptions: any[] = sortOptions;
+  private perPageOptions: any[] = perPageOptions;
   private helpTexts: helpText[] = helpTexts;
   private totalRecordsCount: any = '';
-
-  // aggregations
+  private reqMap: any = { hits: 0, aggs: 0, map: 0 };
+  private reqWaiting: any = {};
+  private filterUpdate: any = null;
   private aggsResult: any = {};
   private aggsLoading: boolean = false;
-
-  // minimap
+  private timelineLoading: boolean = false;
+  private mapLoading: boolean = false;
   private miniMapSearchResult: any = {};
 
   constructor(generalModule: GeneralModule, options: RegisterOptions) {
@@ -56,24 +57,29 @@ export class SearchModule extends VuexModule {
   // sets mini map search
   @Action
   async setMiniMapSearch(mapParams: any) {
+    const reqId = ++this.reqMap.map;
+    this.updateMapLoading(true);
     let res;
     try {
+      if (mapParams.ariadneSubject?.includes('Dating')) {
+        mapParams = { ...mapParams, ariadneSubject: mapParams.ariadneSubject.replace('Dating', 'Date') };
+      }
       const url = process.env.apiUrl + '/getMiniMapData';
-      res = await axios.get(utils.paramsToString(url, {...mapParams}));
+      res = await axios.get(utils.paramsToString(url, mapParams));
     }
-    catch (ex) {
-
+    catch (ex) {}
+    if (reqId === this.reqMap.map) {
+      this.updateMiniMapSearchResult(res?.data || {});
+      this.updateMapLoading(false);
     }
-    this.updateMiniMapSearchResult(res?.data || {});
   }
 
   @Action
   async setSearch(payload: any) {
-
     let currentPath = router.currentRoute.value.path;
     currentPath = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
 
-    let path = payload?.path ?? currentPath;
+    let path = payload.path ?? currentPath;
 
     let params: any = utils.getCopy(this.params);
     let currentParams = utils.getCopy(params);
@@ -92,24 +98,10 @@ export class SearchModule extends VuexModule {
     }
 
     for (let key in payload) {
-      if (payload[key] && key !== 'clear' && key !== 'path') {
+      if (payload[key] && key !== 'clear' && key !== 'path' && key !== 'replaceRoute') {
         params[key] = payload[key];
       } else {
-        if (key === 'derivedSubjectId' && params.derivedSubjectIdLabel) {
-          delete params.derivedSubjectIdLabel;
-        }
         delete params[key];
-      }
-
-      // makes sure previous periods filters are reseted if year range is selected
-      // todo: switch to periodo regions & periods when available
-      if (key === 'range') {
-        delete params.publisher;
-        delete params.ariadneSubject;
-      }
-      // reverse of above check
-      else if (key === 'publisher' || key === 'ariadneSubject') {
-        delete params.range;
       }
     }
     if (params.page) {
@@ -120,8 +112,25 @@ export class SearchModule extends VuexModule {
     }
     params.q = params.q.toLowerCase();
 
-    if (utils.objectEquals(params, currentParams) && path === currentPath && !payload?.forceReload) {
+    if (utils.objectEquals(params, currentParams) && path === currentPath && !payload.forceReload) {
       return;
+    }
+
+    let filterUpdate: any = null;
+    if ((params.q || null) !== (currentParams.q || null)) {
+      filterUpdate = { q: '' };
+    } else {
+      for (let key in aggregationModule.getDescriptions) {
+        if ((params[key] || null) !== (currentParams[key] || null)) {
+          if (!filterUpdate) {
+            filterUpdate = {};
+          }
+          filterUpdate[key] = params[key];
+        }
+      }
+    }
+    if (filterUpdate || this.filterUpdate) {
+      this.updateFilterUpdate(filterUpdate);
     }
 
     if (updateUrl) {
@@ -129,22 +138,34 @@ export class SearchModule extends VuexModule {
       const stringParams = utils.objectConvertNumbersToStrings(params);
 
       if (!utils.objectEquals(router.currentRoute.value.query, stringParams) || path !== currentPath) {
-        router.push(utils.paramsToString(path, params));
+        if (currentPath === '/browse/where' && !payload.path) {
+          router.replace(utils.paramsToString(path, params));
+        } else {
+          router.push(utils.paramsToString(path, params));
+        }
       }
     }
 
     const time = Date.now();
 
     let data: any;
-    // default to locked loading status
-    this.generalModule.updateLoadingStatus(payload?.loadingStatus ?? LoadingStatus.Locked);
+    const reqId = ++this.reqMap.hits;
+    this.generalModule.updateLoadingStatus(payload.loadingStatus ?? LoadingStatus.Locked);
     this.updateParams(params);
 
     try {
+      const sendParams = { ...params, ...this.getDefaultSort() }
+      if (sendParams.ariadneSubject?.includes('Dating')) {
+        sendParams.ariadneSubject = sendParams.ariadneSubject.replace('Dating', 'Date')
+      }
       const url = process.env.apiUrl + '/search';
-      const res = await axios.get(utils.paramsToString(url, { ...params, ...this.getDefaultSort() }));
+      const res = await axios.get(utils.paramsToString(url, sendParams));
       data = res?.data;
     } catch (ex) {}
+
+    if (reqId !== this.reqMap.hits) {
+      return;
+    }
 
     if (data?.hits) {
       data.hits.forEach((hit: any) => {
@@ -152,23 +173,45 @@ export class SearchModule extends VuexModule {
           hit.data.derivedSubject = [...hit.data.derivedSubject, ...hit.data.aatSubjects];
           hit.data.aatSubjects = [];
         }
+        for (let key in hit.data) {
+          if (Array.isArray(hit.data[key])) {
+            hit.data[key] = hit.data[key].filter(v => v);
+          }
+        }
+        if (hit.data.resourceType?.toLowerCase() === 'date') {
+          hit.data.resourceType = 'dating';
+        }
+        if (Array.isArray(hit.data.ariadneSubject)) {
+          hit.data.ariadneSubject.forEach(s => {
+            if (s.prefLabel === 'Date') {
+              s.prefLabel = 'Dating';
+            }
+          });
+        }
       });
     }
-    if (data) {
+
+    if (data && !data.error) {
       this.updateResult({
         total: data.total,
         hits: data.hits,
         time: Math.round(((Date.now() - time) / 1000) * 100) / 100,
         aggs: data.aggregations
       });
+      if (currentPath === '/browse/where') {
+        this.updateAggsResult({
+          total: data.total,
+          hits: data.hits,
+          aggs: data.aggregations,
+        });
+      }
+    } else if (data.error && data.error.msg == 'Scrolling exceeded maximum') {
+      this.updateResult({ error: 'Scrolling exceeded maximum. Please use filters and/or search to narrow down your search.' });
     } else {
       this.updateResult({ error: 'Internal error. Search failed..' });
-      this.generalModule.updateLoadingStatus(LoadingStatus.None);
-      return;
     }
 
     this.generalModule.updateLoadingStatus(LoadingStatus.None);
-
   }
 
 
@@ -177,42 +220,102 @@ export class SearchModule extends VuexModule {
    * Aggs are used for filters on frontend
    */
    @Action
-  async setAggregationSearch(routerQuery:any) {
+  setAggregationSearch(routerQuery: any) {
+    const currentPath = router.currentRoute.value.path;
+    let sendParams = { ...routerQuery };
 
-    // Get timline aggregation only if route matches one of these
-    const timelineRoutes = ['/search','/browse/when', '/'];
-    let getTimeline: boolean = timelineRoutes.find(element => element == router.currentRoute.value.path)?true:false;
-    let params = {
-      ...routerQuery,
-      timeline: getTimeline
-    };
-
+    const reqId = ++this.reqMap.aggs;
     this.updateAggsLoading(true);
 
     try {
       const url = process.env.apiUrl + '/getSearchAggregationData';
-      const res = await axios.get(utils.paramsToString(url, { ...params, ...this.getDefaultSort() } ));
-
-      let data = res?.data;
-      if (utils.objectIsNotEmpty(data?.aggregations)) {
-        if (data.aggregations.temporal?.temporal) {
-          data.aggregations.temporal = data.aggregations.temporal.temporal;
-        }
-        this.updateAggsResult({
-          total: data.total,
-          hits: data.hits,
-          aggs: data.aggregations,
-        });
-
-      } else {
-        this.updateAggsResult({});
+      sendParams = { ...sendParams, ...this.getDefaultSort() }
+      if (currentPath === '/browse/when') {
+        sendParams.timeline = 'true';
       }
+      if (sendParams.ariadneSubject?.includes('Dating')) {
+        sendParams.ariadneSubject = sendParams.ariadneSubject.replace('Dating', 'Date')
+      }
+      axios.get(utils.paramsToString(url, sendParams)).then(res => {
+        if (reqId === this.reqMap.aggs) {
+          let data = res?.data;
+          if (utils.objectIsNotEmpty(data?.aggregations)) {
+            if (data.aggregations.temporal?.temporal) {
+              data.aggregations.temporal = data.aggregations.temporal.temporal;
+            }
+            if (Array.isArray(data?.aggregations?.ariadneSubject?.buckets)) {
+              data?.aggregations.ariadneSubject.buckets.forEach(b => {
+                if (b?.key === 'Date') {
+                  b.key = 'Dating';
+                }
+              });
+            }
+            if (currentPath === '/search') {
+              if (this.timelineLoading) {
+                data.aggregations.range_buckets = {};
+              } else {
+                data.aggregations.range_buckets = this.reqWaiting[reqId];
+                this.clearReqWaiting();
+              }
+            }
+            this.updateAggsResult({
+              total: data.total,
+              hits: data.hits,
+              aggs: data.aggregations,
+            });
+          } else {
+            this.updateAggsResult({});
+          }
+          this.updateAggsLoading(false);
+        }
+      }).catch(ex => {
+        if (reqId === this.reqMap.aggs) {
+          this.updateAggsResult({ error: 'Internal error. Search failed..' });
+          this.updateAggsLoading(false);
+        }
+      });
     } catch (ex) {
-      this.updateAggsResult({ error: 'Internal error. Search failed..' });
+      if (reqId === this.reqMap.aggs) {
+        this.updateAggsResult({ error: 'Internal error. Search failed..' });
+        this.updateAggsLoading(false);
+      }
     }
 
-    this.updateAggsLoading(false);
+    if (currentPath === '/search') {
+      this.setTimelineSearch({ sendParams, reqId });
+    }
+  }
 
+  // this is sometimes very slow - so do separately or search page
+  @Action
+  async setTimelineSearch(payload: any) {
+    const params = payload.sendParams;
+    const reqId = payload.reqId;
+
+    this.updateTimelineLoading(true);
+
+    try {
+      const url = process.env.apiUrl + '/getSearchAggregationData';
+      const res = await axios.get(utils.paramsToString(url, { ...params, ...{ timeline: 'true', onlyTimeline: 'true' }}));
+
+      if (reqId === this.reqMap.aggs && res?.data?.aggregations?.range_buckets) {
+        if (this.aggsLoading) {
+          this.reqWaiting[reqId] = res.data.aggregations.range_buckets;
+        } else {
+          this.aggsResult.aggs.range_buckets = res.data.aggregations.range_buckets;
+          this.clearReqWaiting();
+          this.updateAggsResult({
+            total: this.aggsResult.total,
+            hits: this.aggsResult.hits,
+            aggs: this.aggsResult.aggs,
+          });
+        }
+      }
+    } catch (ex) {}
+
+    if (reqId === this.reqMap.aggs) {
+      this.updateTimelineLoading(false);
+    }
   }
 
   @Action
@@ -224,6 +327,11 @@ export class SearchModule extends VuexModule {
   @Action
   actionResetResultState() {
     this.resetResultState();
+  }
+
+  @Mutation
+  clearReqWaiting() {
+    this.reqWaiting = {};
   }
 
   @Mutation
@@ -256,11 +364,32 @@ export class SearchModule extends VuexModule {
   @Mutation
   updateAggsResult(result: any) {
     this.aggsResult = result;
+    if (this.filterUpdate) {
+      for (let key in this.filterUpdate) {
+        aggregationModule.clearFilterOptions(key);
+      }
+      this.filterUpdate = null;
+    }
   }
 
   @Mutation
   updateAggsLoading(loading: boolean) {
     this.aggsLoading = loading;
+  }
+
+  @Mutation
+  updateFilterUpdate(payload: any) {
+    this.filterUpdate = payload;
+  }
+
+  @Mutation
+  updateTimelineLoading(loading: boolean) {
+    this.timelineLoading = loading;
+  }
+
+  @Mutation
+  updateMapLoading(loading: boolean) {
+    this.mapLoading = loading;
   }
 
   @Mutation
@@ -286,6 +415,14 @@ export class SearchModule extends VuexModule {
 
   get getIsAggsLoading(): boolean {
     return this.aggsLoading;
+  }
+
+  get getIsTimelineLoading(): boolean {
+    return this.timelineLoading;
+  }
+
+  get getIsMapLoading(): boolean {
+    return this.mapLoading;
   }
 
   get getAutoComplete(): any {
@@ -315,6 +452,14 @@ export class SearchModule extends VuexModule {
 
   get getSortOptions(): any[] {
     return this.sortOptions;
+  }
+
+  get getPerPageOptions(): any[] {
+    return this.perPageOptions;
+  }
+
+  get getPerPage(): string {
+    return this.params?.size || '20';
   }
 
   get getHelpTexts(): helpText[] {

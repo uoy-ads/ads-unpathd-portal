@@ -34,7 +34,6 @@ and <b-link href="https://ariadne-infrastructure.eu/" target="_blank" class="und
          href="https://www.york.ac.uk/about/legal-statements/"
          class="hover:underline" target="_blank">University of York Legal Statements</b-link>
       </div>
-      <div id="footer-teleport-target"></div>
     </div>
   </footer>
 </template>
