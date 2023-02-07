@@ -106,6 +106,7 @@ class Query {
 
     return $query;
   }
+  
 
   /**
    * Map specific query.
@@ -275,6 +276,7 @@ class Query {
           //'owner' => 'name',
           //'publisher' => 'name',
         ];
+
         foreach ($fieldTypes as $key => $val) {
           $innerQuery['bool']['should'][] = [
             'match_bool_prefix' => [
@@ -315,6 +317,19 @@ class Query {
         ];
       }
 
+      if(isset($this->settings->terms)) {
+        foreach ($this->settings->terms as $key => $value) {
+          $innerQuery['bool']['filter'][] = [
+            'match' => [
+              $key => Utils::escapeLuceneValue($value)
+            ]
+          ];
+        }
+        // prevent results being found just because the filter matches
+        $innerQuery['bool']['minimum_should_match'] = 1;
+      }
+
+
       $query = [
         '_source' => ['title'],
         'query' => $innerQuery,
@@ -340,8 +355,14 @@ class Query {
           'label' => $nValue['title'],
         ];
 
+        $hardwired_terms = isset($this->settings->terms) ? array_keys((array)$this->settings->terms) : [];
+
         // get all fields where search string ($q) was found
         foreach ( $value['highlight'] as $hKey=>$hValue ) {
+          // ignore matches on hardwired terms
+          if(in_array($hKey, $hardwired_terms)) {
+            continue;
+          }
           if( str_contains($hKey, '.') ) {
             // delete all after .
             $hKey = strstr($hKey,'.',true);

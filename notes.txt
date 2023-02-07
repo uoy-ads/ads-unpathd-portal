@@ -11,3 +11,5 @@ fix filtering (broke during merge)
 try to apply filtering to autocomplete searches (if doesn't then work)
 put a version on the demo site with the homepage as the landing page for julian to assess
 if doesn't work well enough we can change the results page back to the landing pade
+
+I actually changed the "search in x resources" to "search resources" because the count didn't include the filter
