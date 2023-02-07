@@ -11,8 +11,20 @@ class AppSettings {
   public static function getSettings () {
     if (!self::$settings) {
       self::$settings = json_decode(file_get_contents('../../classes/settings.json'));
+      self::applyThemeSettings();
     }
     return self::$settings;
+  }
+
+  private static function applyThemeSettings() {
+    $path = '../../theme/settings.json';
+    if(file_exists($path)) {
+      $theme_settings = json_decode(file_get_contents($path));
+      if($theme_settings) {
+        self::$settings = (object) array_merge(
+          (array) self::$settings, (array) $theme_settings);
+      }
+    }
   }
 
   /**

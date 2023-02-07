@@ -1,0 +1,13 @@
+Timeline doesn't appear on when search results are homepage because is hardwired to only work on certain pages - see client\src\store\modules\Search.ts
+
+is it possible to add an extra paramter to the api/autocomplete queries to filter them and only show results relevant to maritime?
+
+where do the homepage images come from?
+they are all hardwired we can replace them easily enough.
+
+
+
+fix filtering (broke during merge)
+try to apply filtering to autocomplete searches (if doesn't then work)
+put a version on the demo site with the homepage as the landing page for julian to assess
+if doesn't work well enough we can change the results page back to the landing pade
