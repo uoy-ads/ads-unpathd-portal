@@ -6,6 +6,7 @@ services:
     build:
       context: client
       dockerfile: docker/client-demo.dockerfile
+    restart: always
     container_name: unpathd
     environment:
       VIRTUAL_HOST: ads20demo0
@@ -19,6 +20,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./server/:/var/www/
+    restart: always
     container_name: unpathd-api
     environment:
       VIRTUAL_HOST: ads20demo0
