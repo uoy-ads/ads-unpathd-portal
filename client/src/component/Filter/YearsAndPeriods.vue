@@ -1,11 +1,6 @@
 <template>
   <div>
-    <!-- FILTER PERIODS AND YEARS - PERIODO POC -->
-    <list-tabs :initiallySelectedTabTitle="initiallySelectedTabTitle" @onTabChange="onTabChange">
-      <list-tab
-        title="Filter By Year"
-        icon="fa fa-calendar-alt"
-      >
+
         <p
           class="bg-red text-white text-md ease-in-out duration-200 overflow-hidden"
           :class="{
@@ -17,25 +12,7 @@
         </p>
 
         <filter-years />
-      </list-tab>
-
-      <list-tab
-        title="Filter By Time Periods"
-        icon="fa fa-history"
-      >
-        <p
-          class="bg-red text-white text-md ease-in-out duration-200 overflow-hidden"
-          :class="{
-            'h-none': !activeYearsFilterWarning,
-            'p-sm mb-md': activeYearsFilterWarning,
-          }"
-        >
-          {{ activeYearsFilterWarning }}
-        </p>
-
-        <filter-periods v-if="currentTab === 'Filter By Time Periods'" />
-      </list-tab>
-    </list-tabs>
+    
   </div>
 </template>
 
