@@ -115,23 +115,23 @@ export const frontPageImageTexts: any = {
   },
   6: {
     title: 'VENUS project',
-    text: 'Image resulting from the survey carried out by the Remora 200 submarine on October 11 2008 as part of the VENUS project. The VENUS project aimed to develop scientific methodologies and deliver technological tools for the virtual exploration of deep underwater archaeology sites. The project team surveyed shipwrecks at various depths and to explore advanced methods and techniques of data acquisition through autonomous or remotely operated unmanned vehicles with innovative sonar and photogrammetry equipment.  https://doi.org/10.5284/1000004 Data copyright © VENUS: Virtual ExploratioN of Underwater Site'
+    text: 'Image resulting from the survey carried out by the Remora 200 submarine on October 11 2008 as part of the VENUS project.  https://doi.org/10.5284/1000004. Data copyright © VENUS: Virtual ExploratioN of Underwater Site'
   },
   7: {
     title: 'Isles of Scilly Designated Wrecks',
-    text: 'Anchor and diver from the Isles of Scilly Designated Wrecks project This project concerned five wreck sites situated in the Isles of Scilly: Tearing Ledge, HMS Association, Bartholomew Ledges, HMS Colossus and the Wheel Wreck. The project collected high resolution multi-beam data for each of the five sites and created web-based virtual site tours. https://doi.org/10.5284/1051619 Data copyright © Kevin Camidge unless otherwise stated'
+    text: 'Anchor and diver from the Isles of Scilly Designated Wrecks project This project concerned five wreck sites situated in the Isles of Scilly: Tearing Ledge, HMS Association, Bartholomew Ledges, HMS Colossus and the Wheel Wreck. The project collected high resolution multi-beam data for each of the five sites and created web-based virtual site tours. https://doi.org/10.5284/1051619 Data copyright © Kevin Camidge'
   },
   8: {
     title: 'Isles of Scilly Designated Wrecks',
-    text: 'Side view of sheave wheels showing rims with diver in background from the Isles of Scilly Designated Wrecks project. The project investigated five designated wreck sites situated in the Isles of Scilly: Tearing Ledge, HMS Association, Bartholomew Ledges, HMS Colossus and the Wheel Wreck.  https://doi.org/10.5284/1051619 Data copyright © Kevin Camidge unless otherwise stated'
+    text: 'Side view of sheave wheels showing rims with diver in background from the Isles of Scilly Designated Wrecks project. The project investigated five designated wreck sites situated in the Isles of Scilly: Tearing Ledge, HMS Association, Bartholomew Ledges, HMS Colossus and the Wheel Wreck.  https://doi.org/10.5284/1051619 Data copyright © Kevin Camidge'
   },
   9: {
     title: 'Flamborough Head Lighthouse',
-    text: 'General view of Flamborough Head Lighthouse, viewed from the east during a historic building recording survey of the building. The recording was undertaken to provide a permanent record of the current Fresnel Lens optic of the lighthouse, which is to be replaced with a modern light. The 1925 optic was moved to the basement of the tower and installed as part of a museum display. https://doi.org/10.5284/1103149 Data copyright © York Archaeology unless otherwise stated'
+    text: 'General view of Flamborough Head Lighthouse, viewed from the east during a historic building recording survey of the building. The recording was undertaken to provide a permanent record of the current Fresnel Lens optic of the lighthouse, which is to be replaced with a modern light. https://doi.org/10.5284/1103149 Data copyright © York Archaeology'
   },
   10: {
     title: 'The barque Antoinette',
-    text: 'The barque Antoinette was wrecked on the Doom Bar on 2 January 1895 bound for Santos from Newport, Gwent with a cargo of coal. Part of the wreckage was carried by spring tides on to Town Bar where it became a hazard to fishermen and ferrymen and the remains became buried by sand following unsuccessful attempts at demolition using explosives. https://doi.org/10.5284/1000403 Data copyright © Maritime Archaeology Trust unless otherwise stated'
+    text: 'The barque Antoinette was wrecked on the Doom Bar on 2 January 1895 bound for Santos from Newport, Gwent with a cargo of coal. Part of the wreckage was carried by spring tides on to Town Bar where it became a hazard to fishermen and ferrymen and the remains became buried by sand following unsuccessful attempts at demolition using explosives. https://doi.org/10.5284/1000403 Data copyright © Maritime Archaeology Trust'
   },
   11: {
     title: 'SS Apapa',
