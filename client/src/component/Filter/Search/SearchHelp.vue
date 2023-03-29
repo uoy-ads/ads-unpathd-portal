@@ -27,7 +27,7 @@
         <i class="fas fa-times text-xl cursor-pointer pl-sm py-sm hover:text-red transition-color duration-300" @click="showPopup = false"></i>
       </h2>
       <div class="px-xl py-md">
-        <p class="mb-md">Welcome to the ARIADNE Portal where you can search over 2 million records relating to archaeological fieldwork reports, research papers, scientific datasets, sites and monuments through to individual artefacts from across the world.</p>
+        <p class="mb-md">Welcome to the UNPATH Portal where you can search thousands of resources relating to the rich maritime heritage of the British Isles.</p>
 
         <p class="mb-md">The search is designed to start with one or more key words where logical “AND” is applied. For example, a search for “gold coin” will return only records where both these words are to be found in the metadata record. The default setting is “All fields”, i.e. the whole record is searched. There are several filters on the Results page which can be applied to further refine the returned results.</p>
 
