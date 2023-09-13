@@ -136,6 +136,10 @@ export const frontPageImageTexts: any = {
   11: {
     title: 'SS Apapa',
     text: 'Survey of the SS Apapa. The Unpath\'d Waters project is using such data to try to identify wrecks in the Irish Sea. Data copyright © Dr Michael Roberts, Bangor University'
+  },
+  12: {
+    title: 'The barque Thorne',
+    text: 'In the early hours of 25 January 1890 the Thorne ran aground in heavy seas off Port Jack in the Isle of Man. Happily all hands were saved, but some of the cargo, including spirits and casks of liquor, floated out of the vessel. Although customs and police officers tried to prevent pilfering, many people managed to carry away large quantities of spirits. The anchor from the Thorne is on display in Laxey. https://imuseum.im/search/archive_record/view?id=mnh-museum-123774 © Manx National Heritage'
   }
 };
 
