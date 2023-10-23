@@ -44,6 +44,8 @@ If you experience any problems see https://github.com/uoy-ads/ads-srv#troublesho
 
 ## Update SSL Certs
 
+SSL certs need updating annually and will be provided by the system admin.
+
 ``` bash
 # switch user to root
 sudo su
