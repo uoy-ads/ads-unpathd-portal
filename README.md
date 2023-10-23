@@ -40,7 +40,7 @@ cd /srv
 ./up.sh ads-unpathd-portal
 ```
 
-If you experience any problems see the "Troubleshooting" section of the readme at https://github.com/uoy-ads/ads-srv
+If you experience any problems see https://github.com/uoy-ads/ads-srv#troubleshooting
 
 ## Update SSL Certs
 
