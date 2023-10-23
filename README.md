@@ -45,6 +45,9 @@ If you experience any problems see the "Troubleshooting" section of the readme a
 ## Update SSL Certs
 
 ``` bash
+# switch user to root
+sudo su
+
 cd /srv/certs
 # backup the cert and key
 cp unpathd.ads.ac.uk.crt unpathd.ads.ac.uk.crt-old && cp unpathd.ads.ac.uk.key unpathd.ads.ac.uk.key-old
@@ -55,6 +58,9 @@ cat unpathd.ads.ac.uk.pem GEANT_OV_CA.pem USERTrust_CA.pem > bundle.pem
 
 # move the concatenated cert and key
 mv bundle.pem /srv/certs/unpathd.ads.ac.uk.crt && mv /home/adssys/TEMP/key/unpathd.ads.ac.uk.key /srv/certs/unpathd.ads.ac.uk.key
+
+# restart nginx
+docker container restart nginx-proxy
 
 # *check everything is working* before removing the backups...
 rm /srv/certs/*-old
