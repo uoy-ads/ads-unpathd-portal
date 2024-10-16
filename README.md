@@ -54,12 +54,13 @@ cd /srv/certs
 # backup the cert and key
 cp unpathd.ads.ac.uk.crt unpathd.ads.ac.uk.crt-old && cp unpathd.ads.ac.uk.key unpathd.ads.ac.uk.key-old
 
+# note the directory where the system admin puts the certs might be diffeerent to the one below
 cd /home/adssys/TEMP/certs
 # concatenate the certs
 cat unpathd.ads.ac.uk.pem GEANT_OV_CA.pem USERTrust_CA.pem > bundle.pem
 
 # move the concatenated cert and key
-mv bundle.pem /srv/certs/unpathd.ads.ac.uk.crt && mv /home/adssys/TEMP/key/unpathd.ads.ac.uk.key /srv/certs/unpathd.ads.ac.uk.key
+mv bundle.pem /srv/certs/unpathd.ads.ac.uk.crt && mv unpathd.ads.ac.uk.key /srv/certs/unpathd.ads.ac.uk.key
 
 # restart nginx
 docker container restart nginx-proxy
