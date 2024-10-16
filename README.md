@@ -54,7 +54,7 @@ cd /srv/certs
 # backup the cert and key
 cp unpathd.ads.ac.uk.crt unpathd.ads.ac.uk.crt-old && cp unpathd.ads.ac.uk.key unpathd.ads.ac.uk.key-old
 
-# note the directory where the system admin puts the certs might be diffeerent to the one below
+# note the directory where the system admin puts the certs might be different to the one below
 cd /home/adssys/TEMP/certs
 # concatenate the certs
 cat unpathd.ads.ac.uk.pem GEANT_OV_CA.pem USERTrust_CA.pem > bundle.pem
