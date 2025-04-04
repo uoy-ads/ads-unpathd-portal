@@ -37,7 +37,7 @@ Currently you need to SSH to the relevant machine (production is ads20unpathd0) 
 
 ``` bash
 cd /srv
-./up.sh ads-unpathd-portal
+./up.sh ads-unpathd-portal master
 ```
 
 If you experience any problems see https://github.com/uoy-ads/ads-srv#troubleshooting
@@ -67,5 +67,14 @@ docker container restart nginx-proxy
 
 # *check everything is working* before removing the backups...
 rm /srv/certs/*-old
+```
+
+## Migrate to a new VM
+Install docker and [ads-srv](https://github.com/uoy-ads/ads-srv)
+
+```shell
+cd /srv
+./up.sh ads-nginx-proxy
+./up.sh ads-unpathd-portal master
 ```
 
