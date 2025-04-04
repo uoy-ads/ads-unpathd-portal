@@ -4,7 +4,7 @@
 
 You must Remote Desktop to your office PC to do any development work due to IP restrictions on the remotely hosted OpenSearch indeces.
 
-You'll need PHP, Composer, NPM and Docker to be installed there.
+You'll need [PHP](https://windows.php.net/download/), [Composer](https://getcomposer.org/download/), [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) and [Docker](https://docs.docker.com/desktop/setup/install/windows-install/) to be installed there.
 
 Creating a more convenient "works out of the box" dev environment is on the to-do list.
 
