@@ -70,7 +70,7 @@ rm /srv/certs/*-old
 ```
 
 ## Migrate to a new VM
-Install docker and [ads-srv](https://github.com/uoy-ads/ads-srv)
+Install [Docker](https://docs.docker.com/desktop/setup/install/linux/) and [ads-srv](https://github.com/uoy-ads/ads-srv)
 
 ```shell
 cd /srv
