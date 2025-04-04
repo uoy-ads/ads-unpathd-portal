@@ -21,7 +21,7 @@
     "@types/leaflet.heat": "^0.2.1",
     "@types/leaflet.markercluster": "^1.4.5",
     "autoprefixer": "10.4.5",
-    "axios": "^0.27.2",
+    "axios": "^1.6.0",
     "chart.js": "^2.9.4",
     "chartjs-plugin-zoom": "^0.7.7",
     "clean-webpack-plugin": "^4.0.0",
