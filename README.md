@@ -2,7 +2,7 @@
 
 ## Development
 
-You must Remote Desktop to your office PC to do any development work due to IP restrictions on the remotely hosted OpenSearch indeces.
+You must Remote Desktop to an office PC to do any development work due to IP restrictions on the remotely hosted OpenSearch indeces.
 
 You'll need [PHP](https://windows.php.net/download/), [Composer](https://getcomposer.org/download/), [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) and [Docker](https://docs.docker.com/desktop/setup/install/windows-install/) to be installed there.
 
