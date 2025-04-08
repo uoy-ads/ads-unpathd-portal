@@ -69,3 +69,17 @@ docker container restart nginx-proxy
 rm /srv/certs/*-old
 ```
 
+## Migrate to a new VM
+
+- Copy the contents of /srv from the old VM to the new one.
+- Ask ITS to grant outgoing access.
+- Install [Docker](https://docs.docker.com/engine/install/ubuntu/).
+- Run:
+``` bash
+cd /srv/ads-unpathd-portal
+sudo docker compose -f docker-compose.production.yml up --build -d
+```
+- Ask ITS to grant incoming access.
+- Create a hosts entry on your machine to point unpathd.ads.ac.uk at the new VM's IP.
+- When everything is working request a DNS change to point at the new VM.
+
