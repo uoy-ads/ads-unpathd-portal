@@ -69,12 +69,3 @@ docker container restart nginx-proxy
 rm /srv/certs/*-old
 ```
 
-## Migrate to a new VM
-Install [Docker](https://docs.docker.com/desktop/setup/install/linux/) and [ads-srv](https://github.com/uoy-ads/ads-srv)
-
-```shell
-cd /srv
-./up.sh ads-nginx-proxy
-./up.sh ads-unpathd-portal master
-```
-
