@@ -40,8 +40,6 @@ cd /srv
 ./up.sh ads-unpathd-portal master
 ```
 
-If you experience any problems see https://github.com/uoy-ads/ads-srv#troubleshooting
-
 ## Update SSL Certs
 
 SSL certs need updating annually and will be provided by the system admin.
