@@ -71,11 +71,16 @@ rm /srv/certs/*-old
 
 - Copy the contents of /srv from the old VM to the new one.
 - Ask ITS to grant outgoing access.
-- Install [Docker](https://docs.docker.com/engine/install/ubuntu/).
+- Install [Docker](https://docs.docker.com/engine/install/ubuntu/) and add yourself to the docker group:
+``` bash
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
 - Run:
 ``` bash
 cd /srv/ads-unpathd-portal
-sudo docker compose -f docker-compose.production.yml up --build -d
+docker compose -f docker-compose.production.yml up --build -d
 ```
 - Ask ITS to grant incoming access.
 - Create a hosts entry on your machine to point unpathd.ads.ac.uk at the new VM's IP.
