@@ -31,9 +31,9 @@ npm run dev
 
 ## Deploy
 
-The project is set up for deployment to both http://ads20demo0/unpathd (staging) and https://unpathd.ads.ac.uk (production)
+The project is set up for deployment to https://unpathd.ads.ac.uk
 
-Currently you need to SSH to the relevant machine (production is ads20unpathd0) and run:
+Currently you need to SSH to ads24unpathd0 and run:
 
 ``` bash
 cd /srv
