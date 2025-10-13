@@ -15,7 +15,7 @@ cp unpathd.ads.ac.uk.crt unpathd.ads.ac.uk.crt-old && cp unpathd.ads.ac.uk.key u
 # note the directory where the system admin puts the certs might be different to the one below
 cd /home/adssys/TEMP/certs
 # concatenate the certs
-cat unpathd.ads.ac.uk.pem 'AAA Certificate Services.pem' 'Sectigo ECC Organization Validation Secure Server CA.pem' 'USERTrust ECC Certification Authority.pem' > bundle.pem
+cat unpathd.ads.ac.uk.pem Sectigo_Public_Server_Authentication_CA_OV_E36.pem Sectigo_Public_Server_Authentication_Root_E46.pem > bundle.pem
 
 # move the concatenated cert and key
 mv bundle.pem /srv/certs/unpathd.ads.ac.uk.crt && mv unpathd.ads.ac.uk.key /srv/certs/unpathd.ads.ac.uk.key
